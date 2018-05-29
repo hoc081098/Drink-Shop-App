@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Drink Shop</string>
+    <string name="continue_string">Continue</string>
+
+
+    <string name="FACEBOOK_APP_ID">207866656669871</string>
+    <string name="ACCOUNT_KIT_CLIENT_TOKEN">e3cc56f9d0166853d4cc02d9b6ea55ef</string>
+    <string name="phone_number">Phone number</string>
+    <string name="name">Name</string>
+    <string name="birthday">yyyy-MM-dd</string>
+    <string name="address">Address</string>
+    <string name="register">Register</string>
+    <string name="title_activity_home">HomeActivity</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+    <string name="text_drink_name_trans">TEXT_DRINK_NAME_TRANS</string>
+    <string name="image_drink_trans">IMAGE_DRINK_TRANS</string>
+    <string name="price">$%s</string>
+</resources>
