@@ -19,14 +19,11 @@ import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import okhttp3.ResponseBody
-import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk25.coroutines.onClick
-import org.jetbrains.anko.startActivity
-import org.jetbrains.anko.startActivityForResult
-import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
-
+import javax.net.ssl.HttpsURLConnection
 
 class MainActivity : AppCompatActivity(), AnkoLogger {
     override val loggerTag: String = "MY_TAG_MAIN"
@@ -58,36 +55,36 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
             val account = getCurrentAccount()
             val phoneNumber = account.phoneNumber.phoneNumber
 
-            apiService.checkUserIsExist(phoneNumber)
+            if (phoneNumber == null) {
+                toast("Phone number is null")
+                return@launch
+            }
+
+            apiService
+                    .getUserByPhone(phoneNumber)
                     .awaitResult()
+                    .also { spotsDialog.dismiss() }
                     .onException {
-                        spotsDialog.dismiss()
                         showExceptionMessage(it)
                         return@launch
-                    }.onError {
-                        spotsDialog.dismiss()
-                        showErrorMessage(it)
-                        return@launch
-                    }.onSuccess {
-                        if (it.isExists) {
-                            toast("User with phone $phoneNumber already exists. Navigate to home...")
-
-                            val userResult = apiService.getUserInfomation(phoneNumber).awaitResult()
-
-                            spotsDialog.dismiss()
-                            userResult.onError(::showErrorMessage)
-                                    .onException(::showExceptionMessage)
-                                    .onSuccess {
-                                        spotsDialog.dismiss()
-                                        startActivity<HomeActivity>(USER to it)
-                                        finish()
-                                    }
+                    }.onError { (errorBody, response) ->
+                        if (response.code() != HttpsURLConnection.HTTP_NOT_FOUND) { // if not found, then register
+                            showErrorMessage(errorBody)
                             return@launch
                         }
+                    }.onSuccess {
+                        info(it)
+                        toast("User with phone $phoneNumber already exists. Navigate to home...")
+                        startActivity<HomeActivity>(USER to it)
+                        finish()
+                        return@launch
                     }
 
             val view = layoutInflater.inflate(R.layout.dialog_register, null)
             val editTextBirthday = view.editTextBirthday
+            val editTextAddress = view.editTextAddress
+            val editTextName = view.editTextName
+
             editTextBirthday
                     .addValidator(object : METValidator("Invalid birthday format") {
                         override fun isValid(text: CharSequence, isEmpty: Boolean) =
@@ -105,41 +102,50 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
                     .apply { show() }
 
             view.buttonRegister.onClick {
-                val name = view.editTextName.text.toString()
+                val name = editTextName.text.toString()
                 val birthday = editTextBirthday.text.toString()
-                val address = view.editTextAddress.text.toString()
+                val address = editTextAddress.text.toString()
+                var numberOfErrors = 0
 
-                when {
-                    name.isBlank() -> toast("Please fill in your name")
-                    birthday.isBlank() -> toast("Please fill in your birthday")
-                    !editTextBirthday.validate() -> toast("Invalid birthday format")
-                    address.isBlank() -> toast("Please fill in your address")
-                    else -> {
-                        alert.dismiss()
-                        spotsDialog.show()
+                if (name.isBlank()) {
+                    editTextName.error = "Blank name"
+                    ++numberOfErrors
+                }
 
-                        val registerResult = apiService.register(phoneNumber, name, birthday, address).awaitResult()
+                if (birthday.isBlank()) {
+                    editTextBirthday.error = "Blank birthday"
+                    ++numberOfErrors
+                }
 
-                        spotsDialog.dismiss()
+                if (!editTextBirthday.validate()) {
+                    ++numberOfErrors
+                }
 
-                        registerResult.onException(::showExceptionMessage)
-                                .onSuccess {
-                                    toast(it.message)
-                                    if (it.isSuccessful) {
-                                        val user = User(phoneNumber, name, birthday, address)
-                                        startActivity<HomeActivity>(USER to user)
-                                        finish()
-                                    }
-                                }.onError(::showErrorMessage)
-                    }
+                if (address.isBlank()) {
+                    editTextAddress.error = "Blank address"
+                    ++numberOfErrors
+                }
+
+                if (numberOfErrors == 0) {
+                    alert.dismiss()
+                    spotsDialog.show()
+
+                    apiService.registerNewUser(phoneNumber, name, birthday, address)
+                            .awaitResult()
+                            .also { spotsDialog.dismiss() }
+                            .onException(::showExceptionMessage)
+                            .onError { showErrorMessage(it.first) }
+                            .onSuccess {
+                                startActivity<HomeActivity>(USER to it)
+                                finish()
+                            }
                 }
             }
-
         }
     }
 
     private fun showErrorMessage(it: ResponseBody) {
-        retrofit.parse<Error>(it).let { toast(it.message) }
+        retrofit.parseResultErrorMessage(it).let { toast(it) }
     }
 
     private fun showExceptionMessage(it: Throwable) {

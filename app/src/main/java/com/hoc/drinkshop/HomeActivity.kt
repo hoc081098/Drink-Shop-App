@@ -2,6 +2,8 @@ package com.hoc.drinkshop
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -11,30 +13,29 @@ import android.support.design.widget.Snackbar
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.GridLayoutManager
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import com.daimajia.slider.library.SliderTypes.BaseSliderView
 import com.daimajia.slider.library.SliderTypes.TextSliderView
 import com.facebook.accountkit.AccountKit
+import com.hoc.drinkshop.MainActivity.Companion.USER
 import com.squareup.picasso.Picasso
+import com.squareup.picasso.Target
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.nav_header_home.view.*
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.launch
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.alert
-import org.jetbrains.anko.startActivity
-import org.jetbrains.anko.toast
+import org.jetbrains.anko.*
 import org.koin.android.ext.android.inject
-import retrofit2.Call
 import retrofit2.Retrofit
 import java.io.ByteArrayOutputStream
 
@@ -51,9 +52,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var headerView: View
 
     private fun navigateToDrinkActivity(category: Category) {
-        startActivity<DrinkActivity>(CATEGORY to category)
+        startActivity<DrinkActivity>(CATEGORY to category, MainActivity.USER to user)
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,50 +71,83 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         toggle.syncState()
         nav_view.setNavigationItemSelectedListener(this)
 
-        user = intent.getParcelableExtra<User>(MainActivity.USER)
+        user = intent.getParcelableExtra(USER)
         nav_view.getHeaderView(0).apply {
             headerView = this
-            bindHeaderView(this)
+            bindHeaderView()
             imageViewAvatar.setOnClickListener { selectImage() }
         }
 
         recyclerCategory.run {
-            layoutManager = LinearLayoutManager(this@HomeActivity, LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = GridLayoutManager(this@HomeActivity, 2)
             setHasFixedSize(true)
             adapter = categoryAdapter
         }
 
-        getAndShowBannerSlider()
-        getCategories()
+        getData()
+        swipeLayout.setOnRefreshListener(::getData)
+    }
 
-        swipeLayout.setOnRefreshListener {
-            getAndShowBannerSlider()
-            getCategories()
-            getUserInfomation()
+    private fun getData() {
+        val getBanners = async(parent = parentJob) { apiService.getBanners().await() }
+        val getAllCategories = async(parent = parentJob) { apiService.getAllCategories().await() }
+        val getUser = async(parent = parentJob) { apiService.getUserByPhone(user.phone).await() }
+
+        launch(UI, parent = parentJob) {
+            try {
+                info("start getData")
+                val banners = getBanners.await()
+                info("1")
+                val categories = getAllCategories.await()
+                info("2")
+                val user = getUser.await()
+                info("3")
+                swipeLayout.post { swipeLayout.isRefreshing = false }
+
+                info("${banners.size} ${categories.size} $user")
+                //update slider layout
+                sliderLayout.removeAllSliders()
+                banners.forEach { (_, name, imageUrl) ->
+                    TextSliderView(this@HomeActivity)
+                            .description(name)
+                            .image(imageUrl)
+                            .setScaleType(BaseSliderView.ScaleType.Fit)
+                            .let(sliderLayout::addSlider)
+                }
+
+                //update recycler categories
+                categoryAdapter.submitList(categories)
+
+                //update navigation view
+                this@HomeActivity.user = user.also { info("User: $user") }
+                bindHeaderView()
+            } catch (exception: Throwable) {
+
+            }
         }
     }
 
-    private fun bindHeaderView(headerView: View) = headerView.run {
+    private fun bindHeaderView() = headerView.run {
+        info("Bind view: $user")
         textUserName.text = user.name
         textUserPhone.text = user.phone
-        user.imageUrl?.let {
-            Picasso.with(this@HomeActivity)
-                    .load(it)
-                    .placeholder(R.drawable.ic_image_black_24dp)
-                    .placeholder(R.drawable.ic_image_black_24dp)
-                    .into(imageViewAvatar)
-        }
-    }
 
-    private fun getUserInfomation() {
-        launch(UI, parent = parentJob) {
-            apiService.getUserInfomation(user.phone)
-                    .awaitResult()
-                    .onSuccess {
-                        user = it
-                        bindHeaderView(headerView)
-                    }
-        }
+        val imageUrl = user.imageUrl
+        if (!imageUrl.isNullOrEmpty()) {
+            Picasso.with(context)
+                    .load("$BASE_URL$imageUrl")
+                    .noFade()
+                    .placeholder(R.drawable.ic_account)
+                    .placeholder(R.drawable.ic_account)
+                    .into(object : Target {
+                        override fun onPrepareLoad(placeHolderDrawable: Drawable?) = info("onPrepareLoad")
+                        override fun onBitmapFailed(errorDrawable: Drawable?) = info("onBitmapFailed")
+                        override fun onBitmapLoaded(bitmap: Bitmap, from: Picasso.LoadedFrom?) {
+                            info("onBitmapLoaded ${bitmap.byteCount}")
+                            imageViewAvatar.setImageBitmap(bitmap)
+                        }
+                    })
+        } else info("imageUrl is null or empty")
     }
 
     private fun selectImage() {
@@ -138,16 +171,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun uploadImage(imageUri: Uri?, phone: String) {
-        if (imageUri == null) {
-            toast("Please select an image")
-            return
-        }
+        if (imageUri == null) return
 
         launch(UI, parent = parentJob) {
-            val fileName = contentResolver.query(imageUri, null, null, null, null).use {
-                it.moveToFirst()
-                it.getString(it.getColumnIndex(OpenableColumns.DISPLAY_NAME))
-            }
+            val fileName = contentResolver.query(imageUri, null, null, null, null)
+                    .use {
+                        it.moveToFirst()
+                        it.getString(it.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                    }
 
             val bytes = ByteArrayOutputStream().use {
                 contentResolver.openInputStream(imageUri).copyTo(it)
@@ -157,55 +188,19 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val requestFile: RequestBody = RequestBody.create(contentType, bytes)
 
             val body: MultipartBody.Part = MultipartBody.Part.createFormData("image", fileName, requestFile)
-            apiService.uploadImage(body, phone).awaitResult()
+            apiService.uploadImage(body, phone)
+                    .awaitResult()
                     .onSuccess {
-                        user = user.copy(imageUrl = it.imageUri)
-                        toast(it.message)
+                        toast("Upload image successfully: $it")
+                        user = it
+                        bindHeaderView()
                     }
                     .onException {
                         toast("Cannot upload image because ${it.message ?: "unknown error"}")
                     }
                     .onError {
-                        toast("Cannot upload image because ${retrofit.parse<Error>(it).message}")
+                        toast("Cannot upload image because ${retrofit.parseResultErrorMessage(it.first)}")
                     }
-        }
-    }
-
-    private fun getCategories() {
-        getDataFromService(
-                { apiService.getAllCategories() },
-                { categoryAdapter.submitList(it) },
-                { toast("Cannot get categories because $it") }
-        )
-    }
-
-    private fun getAndShowBannerSlider() {
-        getDataFromService(
-                { apiService.getBanners(3) },
-                {
-                    it.forEach { (name, imageUrl) ->
-                        TextSliderView(this)
-                                .description(name)
-                                .image(imageUrl)
-                                .setScaleType(BaseSliderView.ScaleType.Fit)
-                                .let(sliderLayout::addSlider)
-                    }
-                },
-                { toast("Cannot get banners because $it") }
-        )
-    }
-
-    private inline fun <T : Any> getDataFromService(
-            crossinline getData: () -> Call<T>,
-            crossinline onSuccess: (T) -> Unit,
-            crossinline onErrorOrException: (String) -> Unit
-    ) {
-        launch(UI, parent = parentJob) {
-            getData().awaitResult()
-                    .onSuccess { onSuccess(it) }
-                    .onError { onErrorOrException(retrofit.parse<Error>(it).message) }
-                    .onException { onErrorOrException(it.message ?: "unknown error") }
-            swipeLayout.post { swipeLayout.isRefreshing = false }
         }
     }
 
@@ -260,11 +255,16 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     positiveButton("Ok") {
                         it.dismiss()
                         AccountKit.logOut()
+                        startActivity(intentFor<MainActivity>().clearTask().newTask())
+                        finish()
                     }
                     negativeButton("Cancel") {
                         it.dismiss()
                     }
                 }.show()
+            }
+            R.id.nav_fav_drink -> {
+                startActivity<FavoritesActivity>(USER to user)
             }
         }
 

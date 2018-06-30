@@ -5,37 +5,65 @@ import android.support.v7.util.DiffUtil
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.view.ViewGroup
+import com.jakewharton.rxbinding2.view.clicks
+import com.jakewharton.rxbinding2.view.detaches
 import com.squareup.picasso.Picasso
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import kotlinx.android.synthetic.main.drink_item_layout.view.*
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.concurrent.TimeUnit
 
-class DrinkAdapter(private val onCLickListener: (Drink, View, View) -> Unit) : ListAdapter<Drink, DrinkAdapter.ViewHolder>(diffCallback) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-            DrinkAdapter.ViewHolder(parent inflate R.layout.drink_item_layout)
+typealias Type = Any
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onCLickListener)
+class DrinkAdapter(private val onCLickListener: (Drink, Int) -> Unit, private val userPhone: String) : ListAdapter<Drink, DrinkAdapter.ViewHolder>(diffCallback) {
+    private val subject = PublishSubject.create<Type>()
+    val clickObservable: Observable<Type> = subject
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(parent inflate R.layout.drink_item_layout, parent)
     }
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(getItem(position))
+    }
+
+    inner class ViewHolder(itemView: View, private val parent: ViewGroup) : RecyclerView.ViewHolder(itemView) {
         private val textDrinkName = itemView.textDrinkName!!
         private val imageDrink = itemView.imageDrink!!
         private val imageAddToCart = itemView.imageAddToCart!!
-        private val imageFavorite = itemView.imageFavorite!!
+        val buttonFav = itemView.buttonFav!!
+        private val imageFav = itemView.imageFav!!
+        private val textNumberOfStars = itemView.textNumberOfStars!!
         private val textDrinkPrice = itemView.textDrinkPrice!!
 
-        fun bind(item: Drink?, onCLickListener: (Drink, View, View) -> Unit) = item?.let { drink ->
+        fun bind(item: Drink?) = item?.let { drink ->
             textDrinkName.text = drink.name
-            textDrinkPrice.text = itemView.context.getString(R.string.price,
-                    DecimalFormat.getInstance().format(drink.price.toDouble()))
+            textDrinkPrice.text = itemView.context.getString(R.string.price, decimalFormatPrice.format(drink.price))
+            textNumberOfStars.text = decimalFormatStarCount.format(drink.starCount.toLong())
             Picasso.with(imageDrink.context)
                     .load(drink.imageUrl)
                     .fit()
                     .error(R.drawable.ic_image_black_24dp)
                     .placeholder(R.drawable.ic_image_black_24dp)
                     .into(imageDrink)
-            imageAddToCart.setOnClickListener { onCLickListener(drink, itemView, it) }
-            imageFavorite.setOnClickListener { onCLickListener(drink, itemView, it) }
+
+            val listener = View.OnClickListener { onCLickListener(drink, it.id) }
+            imageAddToCart.setOnClickListener(listener)
+            //buttonFav.setOnClickListener(listener)
+
+            buttonFav.clicks()
+                    .takeUntil(parent.detaches())
+                    .throttleFirst(300, TimeUnit.MILLISECONDS)
+                    .subscribe(subject)
+
+            val isFavorite = userPhone in drink.stars
+            (if (isFavorite) {
+                R.drawable.ic_favorite_black_24dp
+            } else {
+                R.drawable.ic_favorite_border_black_24dp
+            }).let(imageFav::setImageResource)
         }
     }
 
@@ -45,5 +73,9 @@ class DrinkAdapter(private val onCLickListener: (Drink, View, View) -> Unit) : L
             override fun areItemsTheSame(oldItem: Drink?, newItem: Drink?) = oldItem?.id == newItem?.id
             override fun areContentsTheSame(oldItem: Drink?, newItem: Drink?) = oldItem == newItem
         }
+        @JvmField
+        val decimalFormatPrice = DecimalFormat.getInstance()
+        @JvmField
+        val decimalFormatStarCount = DecimalFormat("###,###", DecimalFormatSymbols().apply { groupingSeparator = ' ' })
     }
 }

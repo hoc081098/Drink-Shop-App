@@ -40,10 +40,9 @@
             android:name=".HomeActivity"
             android:label="@string/title_activity_home"
             android:theme="@style/AppTheme" />
-
         <activity android:name=".AddToCartActivity" />
-
         <activity android:name=".DrinkActivity" />
+        <activity android:name=".FavoritesActivity"></activity>
     </application>
 
 </manifest>

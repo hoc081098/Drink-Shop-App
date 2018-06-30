@@ -21,13 +21,14 @@
             <com.daimajia.slider.library.SliderLayout
                 android:id="@+id/sliderLayout"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="0dp"
                 android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
                 android:layout_marginEnd="8dp"
                 app:auto_cycle="true"
                 app:indicator_visibility="visible"
+                app:layout_constraintBottom_toTopOf="@+id/guideline3"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:pager_animation="Accordion"
@@ -36,12 +37,11 @@
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/recyclerCategory"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:background="@android:color/white"
+                android:layout_height="0dp"
                 android:clipToPadding="false"
+                android:padding="4dp"
                 android:scrollbars="none"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView"
@@ -52,16 +52,25 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
                 android:layout_marginEnd="8dp"
+                android:layout_marginBottom="3dp"
                 android:fontFamily="@font/nunito_sans"
                 android:text="OUR POPULAR PRODUCT"
                 android:textAlignment="center"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="18sp"
+                app:layout_constraintBottom_toTopOf="@+id/recyclerCategory"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/sliderLayout" />
+                app:layout_constraintTop_toBottomOf="@+id/guideline3" />
+
+            <android.support.constraint.Guideline
+                android:id="@+id/guideline3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintGuide_percent="0.35" />
         </android.support.constraint.ConstraintLayout>
 
     </android.support.v4.widget.SwipeRefreshLayout>

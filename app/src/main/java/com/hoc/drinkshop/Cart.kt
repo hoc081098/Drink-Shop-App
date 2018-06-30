@@ -10,7 +10,7 @@ import org.koin.dsl.module.applicationContext
 @Entity(tableName = "carts")
 data class Cart(
         val name: String,
-        val drinkId: String,
+        val drinkId: Int,
         val number: Int,
         val comment: String,
         val cupSize: String,
@@ -46,11 +46,11 @@ interface CartDao {
 }
 
 @Database(entities = [Cart::class], version = 1, exportSchema = false)
-abstract class CartDatabase : RoomDatabase() {
+abstract class LocalDatabase : RoomDatabase() {
     abstract fun cartDao(): CartDao
 
     companion object {
-        const val CART_DB_NAME = "CartDatabase"
+        const val CART_DB_NAME = "LocalDatabase"
     }
 }
 
@@ -105,11 +105,11 @@ class CartRepository(private val dao: CartDao) : CartDataSource {
 
 val cartModule = applicationContext {
     bean {
-        Room.databaseBuilder(get<Application>(), CartDatabase::class.java, CartDatabase.CART_DB_NAME)
+        Room.databaseBuilder(get<Application>(), LocalDatabase::class.java, LocalDatabase.CART_DB_NAME)
                 .build()
     }
 
-    bean { get<CartDatabase>().cartDao() }
+    bean { get<LocalDatabase>().cartDao() }
 
     bean { CartRepository(get()) } bind CartDataSource::class
 }

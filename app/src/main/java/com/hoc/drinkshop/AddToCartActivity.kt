@@ -8,6 +8,7 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import com.hoc.drinkshop.DrinkAdapter.Companion.diffCallback
 import com.squareup.picasso.Picasso
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -15,12 +16,14 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
-import kotlinx.android.synthetic.main.add_to_cart_activity.*
+import kotlinx.android.synthetic.main.activity_add_to_cart.*
 import kotlinx.android.synthetic.main.dialog_confirm.view.*
 import kotlinx.android.synthetic.main.topping_item_layout.view.*
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
 import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
@@ -42,7 +45,9 @@ class ToppingAdapter(private val onClickListener: (Drink, Boolean) -> Unit) : Li
     }
 }
 
-class AddToCartActivity : AppCompatActivity() {
+class AddToCartActivity : AppCompatActivity(), AnkoLogger {
+    override val loggerTag: String = "MY_ADD_TO_CART_TAG"
+
     private val parentJob = Job()
     private val compositeDisposable = CompositeDisposable()
     private val apiService by inject<ApiService>()
@@ -56,13 +61,17 @@ class AddToCartActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.add_to_cart_activity)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN)
+        setContentView(R.layout.activity_add_to_cart)
 
         drink = intent.getParcelableExtra(DrinkActivity.DRINK)
 
         val listExtra: ArrayList<Drink>? = intent.getParcelableArrayListExtra(DrinkActivity.TOPPING)
-        if (listExtra === null) getTopping()
-        else toppingAdapter.submitList(listExtra)
+        if (listExtra === null || listExtra.isEmpty()) getTopping()
+        else {
+            info("getParcelableArrayListExtra: $listExtra")
+            toppingAdapter.submitList(listExtra)
+        }
 
         textDrinkName.text = drink.name
         Picasso.with(this)
@@ -98,7 +107,7 @@ class AddToCartActivity : AppCompatActivity() {
 
     private fun showConfirmDialog(number: Int, comment: String, cupSize: String, sugar: Int, ice: Int) {
         val title = "${drink.name} x$number size $cupSize"
-        val totalPrice = number * (drink.price.toDouble() + checkedTopping.sumByDouble { it.price.toDouble() }
+        val totalPrice = number * (drink.price + checkedTopping.sumByDouble { it.price }
                 + if (cupSize == "L") 3 else 0)
 
         val view = layoutInflater.inflate(R.layout.dialog_confirm, null).apply {
@@ -119,7 +128,6 @@ class AddToCartActivity : AppCompatActivity() {
                 .setView(view)
                 .setPositiveButton("Confirm") { dialog, _ ->
                     dialog.dismiss()
-                    toast("add to cart...")
 
                     val cart = Cart(
                             title,
@@ -132,17 +140,13 @@ class AddToCartActivity : AppCompatActivity() {
                             totalPrice
                     )
 
-                    compositeDisposable += cartDataSource.insertCart(cart).subscribeOn(Schedulers.io())
+                    compositeDisposable += cartDataSource.insertCart(cart)
+                            .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribeBy(onError = {
                                 toast("Cannot add to cart because ${it.message ?: "unknown error"}")
                             }, onComplete = {
                                 toast("Add to cart success")
-
-                                cartDataSource.getCountCart().subscribeOn(Schedulers.io())
-                                        .observeOn(AndroidSchedulers.mainThread())
-                                        .subscribeBy { toast(it.toString()) }
-
                             })
 
                 }
@@ -172,9 +176,16 @@ class AddToCartActivity : AppCompatActivity() {
 
     private fun getTopping() {
         launch(UI, parent = parentJob) {
-            apiService.getDrinkByCategoryId("7")
+            apiService.getDrinks(menuId = 7)
                     .awaitResult()
-                    .onSuccess { toppingAdapter.submitList(it) }
+                    .onSuccess {
+                        info("getTopping: $it")
+                        toppingAdapter.submitList(it)
+                    }.onException {
+                        toast("Cannot get topping because ${it.message ?: "unknown error"}")
+                    }.onError {
+                        toast("Cannot get topping because ${retrofit.parseResultErrorMessage(it.first)}")
+                    }
         }
     }
 
@@ -187,5 +198,6 @@ class AddToCartActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         parentJob.cancel()
+        compositeDisposable.clear()
     }
 }

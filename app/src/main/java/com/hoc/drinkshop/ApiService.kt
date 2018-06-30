@@ -6,99 +6,169 @@ import com.facebook.accountkit.AccountKit
 import com.facebook.accountkit.AccountKitCallback
 import com.facebook.accountkit.AccountKitError
 import com.squareup.moshi.Json
+import io.reactivex.Flowable
 import kotlinx.android.parcel.Parcelize
 import kotlinx.coroutines.experimental.CancellableContinuation
 import kotlinx.coroutines.experimental.suspendCancellableCoroutine
 import okhttp3.MultipartBody
-import okhttp3.Response
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.http.*
+import java.util.*
 import kotlin.coroutines.experimental.Continuation
 import kotlin.coroutines.experimental.suspendCoroutine
+import io.reactivex.Observable as RxObservable
 
-const val BASE_URL = "https://drink-shop.herokuapp.com/api/"
-
-data class CheckUserResponse(val isExists: Boolean)
+const val BASE_URL = "https://drink-shop.herokuapp.com/"
 
 data class Error(val message: String)
-
-data class RegisterResponse(val message: String, val isSuccessful: Boolean)
 
 @Parcelize
 data class User(
         val phone: String,
         val name: String,
-        val birthday: String,
+        val birthday: Date,
         val address: String,
         val imageUrl: String? = null
+        //val staredDrinkIds: List<Int>
 ) : Parcelable
 
-data class Banner(val name: String, val imageUrl: String)
+data class Banner(
+        @field:Json(name = "_id") var id: Int,
+        val name: String,
+        val imageUrl: String
+)
 
 @Parcelize
 data class Category(
-        @field:Json(name = "_id") var id: String,
+        @field:Json(name = "_id") var id: Int,
         val name: String,
         val imageUrl: String
 ) : Parcelable
 
 @Parcelize
 data class Drink(
-        @field:Json(name = "_id") var id: String,
+        @field:Json(name = "_id") var id: Int,
         val name: String,
         val imageUrl: String,
-        val price: String,
-        val menuId: String
+        val price: Double,
+        val menuId: Int,
+        val starCount: Int,
+        val stars: List<String>
 ) : Parcelable
 
-data class UploadImageResponse(val message: String, val imageUri: String? = null)
+enum class SortOrder {
+    ASC_SORT_STRING,
+    DESC_SORT_STRING,
+    ASC_FULL_STRING,
+    DESC_FULL_STRING,
+    ASC_NUMBER,
+    DESC_NUMBER;
+
+    override fun toString() = when (this) {
+        ASC_FULL_STRING -> "ascending"
+        DESC_FULL_STRING -> "descending"
+        ASC_SORT_STRING -> "asc"
+        DESC_SORT_STRING -> "desc"
+        ASC_NUMBER -> "1"
+        DESC_NUMBER -> "-1"
+    }
+}
 
 interface ApiService {
-    @FormUrlEncoded
-    @POST("checkuser")
-    fun checkUserIsExist(@Field("phone") phone: String): Call<CheckUserResponse>
+    /*  USER */
+    @GET("users")
+    fun getAllUsers(): Call<List<User>>
+
+    @GET("users/{phone}")
+    fun getUserByPhone(@Path("phone") phone: String): Call<User>
 
     @FormUrlEncoded
-    @POST("register")
-    fun register(
+    @POST("users")
+    fun registerNewUser(
             @Field("phone") phone: String,
             @Field("name") name: String,
             @Field("birthday") birthday: String,
             @Field("address") address: String
-    ): Call<RegisterResponse>
+    ): Call<User>
 
-    @GET("user")
-    fun getUserInfomation(@Query("phone") phone: String): Call<User>
-
-    @GET("banners")
-    fun getBanners(@Query("limit") limit: Int? = null): Call<List<Banner>>
-
-    @GET("drinks/{menu_id}")
-    fun getDrinkByCategoryId(@Path("menu_id") menuId: String): Call<List<Drink>>
-
-    @GET("categories")
-    fun getAllCategories(): Call<List<Category>>
-
-    @POST("image")
+    @POST("users/{phone}/image")
     @Multipart
     fun uploadImage(
             @Part body: MultipartBody.Part,
-            @Part("phone") phone: String
-    ): Call<UploadImageResponse>
+            @Path("phone") phone: String
+    ): Call<User>
+
+
+    /* BANNER */
+    @GET("banners")
+    fun getBanners(@Query("limit") limit: Int? = null): Call<List<Banner>>
+
+
+    /* CATEGORY */
+    @GET("categories")
+    fun getAllCategories(): Call<List<Category>>
+
+
+    /* DRINK */
+    @GET("drinks")
+    fun getDrinks(
+            @Query("menu_id") menuId: Int? = null,
+            @Query("phone") phone: String? = null,
+            @Query("name") name: String? = null,
+            @Query("min_price") minPrice: Double? = null,
+            @Query("max_price") maxPrice: Double? = null,
+            @Query("min_star") minStar: Double? = null,
+            @Query("max_star") maxStar: Double? = null,
+            @Query("sort_name") sortName: SortOrder? = null,
+            @Query("sort_star") sortStar: SortOrder? = null,
+            @Query("sort_price") sortPrice: SortOrder? = null
+    ): Call<List<Drink>>
+
+    @GET("drinks")
+    fun getDrinksFlowable(
+            @Query("menu_id") menuId: Int? = null,
+            @Query("phone") phone: String? = null,
+            @Query("name") name: String? = null,
+            @Query("min_price") minPrice: Double? = null,
+            @Query("max_price") maxPrice: Double? = null,
+            @Query("min_star") minStar: Double? = null,
+            @Query("max_star") maxStar: Double? = null,
+            @Query("sort_name") sortName: SortOrder? = null,
+            @Query("sort_star") sortStar: SortOrder? = null,
+            @Query("sort_price") sortPrice: SortOrder? = null
+
+    ): Flowable<List<Drink>>
+
+    @GET("drinks/{drink_id}")
+    fun getDrinkById(): Call<Drink>
+
+    @FormUrlEncoded
+    @POST("drinks/star")
+    fun addStar(
+            @Field("phone") phone: String,
+            @Field("drink_id") drinkId: Int
+    ): Call<Drink>
+
+    @FormUrlEncoded
+    @HTTP(method = "DELETE", path = "drinks/star", hasBody = true)
+    fun removeStar(
+            @Field("phone") phone: String,
+            @Field("drink_id") drinkId: Int
+    ): Call<Drink>
 }
 
 
 sealed class Result<out T : Any> {
     data class Success<out T : Any>(
             val value: T,
-            val response: Response
+            val response: okhttp3.Response
     ) : Result<T>()
 
-    data class Error(val errorBody: ResponseBody) : Result<Nothing>()
+    data class Error(val errorBody: ResponseBody, val response: okhttp3.Response) : Result<Nothing>()
 
     data class Exception(val throwable: Throwable) : Result<Nothing>()
 }
@@ -125,8 +195,8 @@ inline fun <T : Any> Result<T>.onSuccess(onSuccess: (T) -> Unit): Result<T> {
     return this
 }
 
-inline fun <T : Any> Result<T>.onError(onError: (ResponseBody) -> Unit): Result<T> {
-    if (this is Result.Error) onError(errorBody)
+inline fun <T : Any> Result<T>.onError(onError: (Pair<ResponseBody, okhttp3.Response>) -> Unit): Result<T> {
+    if (this is Result.Error) onError(errorBody to response)
     return this
 }
 
@@ -159,10 +229,10 @@ suspend fun <T : Any> Call<T>.await(): T = suspendCancellableCoroutine { continu
         }
     })
 
-    registerOnComletion(continuation)
+    registerOnCompletion(continuation)
 }
 
-fun <T> Call<*>.registerOnComletion(continuation: CancellableContinuation<T>) {
+fun <T> Call<*>.registerOnCompletion(continuation: CancellableContinuation<T>) {
     continuation.invokeOnCompletion {
         if (continuation.isCancelled) {
             cancel()
@@ -183,20 +253,20 @@ suspend fun <T : Any> Call<T>.awaitResult(): Result<T> = suspendCancellableCorou
                 val body: T? = response.body()
                 when {
                     body != null -> Result.Success(body, response.raw())
-                    else -> Result.Exception(NullPointerException("Reponse body is null"))
+                    else -> Result.Exception(NullPointerException("Response body is null"))
                 }
             }
             else -> {
                 val errorBody = response.errorBody()
                 when {
-                    errorBody != null -> Result.Error(errorBody)
+                    errorBody != null -> Result.Error(errorBody, response.raw())
                     else -> Result.Exception(IllegalStateException("Error body is null"))
                 }
             }
         }.let(continuation::resume)
     })
 
-    registerOnComletion(continuation)
+    registerOnCompletion(continuation)
 }
 
 suspend fun getCurrentAccount(): Account = suspendCoroutine { continuation: Continuation<Account> ->
@@ -211,3 +281,6 @@ inline fun <reified T : Any> Retrofit.parse(responseBody: ResponseBody): T = res
     responseBodyConverter<T>(T::class.java, T::class.java.annotations)
             .convert(it)
 }
+
+
+fun Retrofit.parseResultErrorMessage(responseBody: ResponseBody): String = parse<Error>(responseBody).message
