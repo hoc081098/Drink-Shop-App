@@ -15,9 +15,12 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.concurrent.TimeUnit
 
-typealias Type = Any
+typealias Type = Pair<Drink, Int>
 
-class DrinkAdapter(private val onCLickListener: (Drink, Int) -> Unit, private val userPhone: String) : ListAdapter<Drink, DrinkAdapter.ViewHolder>(diffCallback) {
+class DrinkAdapter(
+        private val onCLickListener: (Drink) -> Unit,
+        private val userPhone: String
+) : ListAdapter<Drink, DrinkAdapter.ViewHolder>(diffCallback) {
     private val subject = PublishSubject.create<Type>()
     val clickObservable: Observable<Type> = subject
 
@@ -33,7 +36,7 @@ class DrinkAdapter(private val onCLickListener: (Drink, Int) -> Unit, private va
         private val textDrinkName = itemView.textDrinkName!!
         private val imageDrink = itemView.imageDrink!!
         private val imageAddToCart = itemView.imageAddToCart!!
-        val buttonFav = itemView.buttonFav!!
+        private val buttonFav = itemView.buttonFav!!
         private val imageFav = itemView.imageFav!!
         private val textNumberOfStars = itemView.textNumberOfStars!!
         private val textDrinkPrice = itemView.textDrinkPrice!!
@@ -49,21 +52,19 @@ class DrinkAdapter(private val onCLickListener: (Drink, Int) -> Unit, private va
                     .placeholder(R.drawable.ic_image_black_24dp)
                     .into(imageDrink)
 
-            val listener = View.OnClickListener { onCLickListener(drink, it.id) }
-            imageAddToCart.setOnClickListener(listener)
-            //buttonFav.setOnClickListener(listener)
+            imageAddToCart.setOnClickListener { onCLickListener(drink) }
+
+            val isFavorite = userPhone in drink.stars
+            when {
+                isFavorite -> R.drawable.ic_favorite_black_24dp
+                else -> R.drawable.ic_favorite_border_black_24dp
+            }.let(imageFav::setImageResource)
 
             buttonFav.clicks()
                     .takeUntil(parent.detaches())
-                    .throttleFirst(300, TimeUnit.MILLISECONDS)
+                    .throttleFirst(400, TimeUnit.MILLISECONDS)
+                    .map { item to adapterPosition }
                     .subscribe(subject)
-
-            val isFavorite = userPhone in drink.stars
-            (if (isFavorite) {
-                R.drawable.ic_favorite_black_24dp
-            } else {
-                R.drawable.ic_favorite_border_black_24dp
-            }).let(imageFav::setImageResource)
         }
     }
 

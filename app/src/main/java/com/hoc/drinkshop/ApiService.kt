@@ -18,7 +18,6 @@ import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.http.*
 import java.util.*
-import kotlin.coroutines.experimental.Continuation
 import kotlin.coroutines.experimental.suspendCoroutine
 import io.reactivex.Observable as RxObservable
 
@@ -33,7 +32,6 @@ data class User(
         val birthday: Date,
         val address: String,
         val imageUrl: String? = null
-        //val staredDrinkIds: List<Int>
 ) : Parcelable
 
 data class Banner(
@@ -148,24 +146,24 @@ interface ApiService {
 
     @FormUrlEncoded
     @POST("drinks/star")
-    fun addStar(
+    fun star(
             @Field("phone") phone: String,
             @Field("drink_id") drinkId: Int
-    ): Call<Drink>
+    ): RxObservable<Drink>
 
     @FormUrlEncoded
-    @HTTP(method = "DELETE", path = "drinks/star", hasBody = true)
-    fun removeStar(
+    @POST("drinks/unstar")
+    fun unstar(
             @Field("phone") phone: String,
             @Field("drink_id") drinkId: Int
-    ): Call<Drink>
+    ): RxObservable<Drink>
 }
 
 
 sealed class Result<out T : Any> {
     data class Success<out T : Any>(
             val value: T,
-            val response: okhttp3.Response
+            val response: okhttp3.Response? = null
     ) : Result<T>()
 
     data class Error(val errorBody: ResponseBody, val response: okhttp3.Response) : Result<Nothing>()
@@ -269,11 +267,15 @@ suspend fun <T : Any> Call<T>.awaitResult(): Result<T> = suspendCancellableCorou
     registerOnCompletion(continuation)
 }
 
-suspend fun getCurrentAccount(): Account = suspendCoroutine { continuation: Continuation<Account> ->
+suspend fun getCurrentAccount(): Result<Account> = suspendCoroutine { continuation ->
     AccountKit.getCurrentAccount(object : AccountKitCallback<Account> {
-        override fun onSuccess(accout: Account) = continuation.resume(accout)
+        override fun onSuccess(accout: Account) = continuation.resume(Result.Success(accout))
 
-        override fun onError(error: AccountKitError) = continuation.resumeWithException(Exception(error.errorType.message))
+        override fun onError(error: AccountKitError) =
+                error.errorType.message
+                        .let(::IllegalStateException)
+                        .let { Result.Exception(it) }
+                        .let(continuation::resume)
     })
 }
 

@@ -23,7 +23,6 @@ import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.info
 import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
@@ -66,13 +65,6 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
 
         drink = intent.getParcelableExtra(DrinkActivity.DRINK)
 
-        val listExtra: ArrayList<Drink>? = intent.getParcelableArrayListExtra(DrinkActivity.TOPPING)
-        if (listExtra === null || listExtra.isEmpty()) getTopping()
-        else {
-            info("getParcelableArrayListExtra: $listExtra")
-            toppingAdapter.submitList(listExtra)
-        }
-
         textDrinkName.text = drink.name
         Picasso.with(this)
                 .load(drink.imageUrl)
@@ -86,6 +78,8 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
             layoutManager = LinearLayoutManager(this@AddToCartActivity)
             adapter = toppingAdapter
         }
+
+        getTopping()
 
         buttonAddToCart.setOnClickListener {
 
@@ -179,7 +173,7 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
             apiService.getDrinks(menuId = 7)
                     .awaitResult()
                     .onSuccess {
-                        info("getTopping: $it")
+                        toast("getTopping: ${it.size}")
                         toppingAdapter.submitList(it)
                     }.onException {
                         toast("Cannot get topping because ${it.message ?: "unknown error"}")

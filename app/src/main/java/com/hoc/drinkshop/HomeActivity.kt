@@ -3,10 +3,11 @@ package com.hoc.drinkshop
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.support.design.widget.NavigationView
 import android.support.design.widget.Snackbar
@@ -14,6 +15,7 @@ import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
+import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -22,7 +24,6 @@ import com.daimajia.slider.library.SliderTypes.TextSliderView
 import com.facebook.accountkit.AccountKit
 import com.hoc.drinkshop.MainActivity.Companion.USER
 import com.squareup.picasso.Picasso
-import com.squareup.picasso.Target
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
@@ -38,6 +39,17 @@ import org.jetbrains.anko.*
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
 import java.io.ByteArrayOutputStream
+
+fun Bitmap.getResizedBitmap(newWidth: Int, newHeight: Int, isNecessaryToKeepOrig: Boolean): Bitmap {
+    val matrix = Matrix().apply {
+        postScale(newWidth.toFloat() / width, newHeight.toFloat() / height)
+    }
+    val resizedBitmap = Bitmap.createBitmap(this, 0, 0, width, height, matrix, false)
+    if (!isNecessaryToKeepOrig) {
+        recycle()
+    }
+    return resizedBitmap
+}
 
 class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, AnkoLogger {
     override val loggerTag: String = "MY_TAG_HOME"
@@ -133,21 +145,15 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         textUserPhone.text = user.phone
 
         val imageUrl = user.imageUrl
+        toast("ImageUrl: $BASE_URL$imageUrl")
         if (!imageUrl.isNullOrEmpty()) {
             Picasso.with(context)
                     .load("$BASE_URL$imageUrl")
-                    .noFade()
-                    .placeholder(R.drawable.ic_account)
-                    .placeholder(R.drawable.ic_account)
-                    .into(object : Target {
-                        override fun onPrepareLoad(placeHolderDrawable: Drawable?) = info("onPrepareLoad")
-                        override fun onBitmapFailed(errorDrawable: Drawable?) = info("onBitmapFailed")
-                        override fun onBitmapLoaded(bitmap: Bitmap, from: Picasso.LoadedFrom?) {
-                            info("onBitmapLoaded ${bitmap.byteCount}")
-                            imageViewAvatar.setImageBitmap(bitmap)
-                        }
-                    })
-        } else info("imageUrl is null or empty")
+                    .fit()
+                    .error(R.drawable.ic_account_circle_black_24dp)
+                    .placeholder(R.drawable.ic_account_circle_black_24dp)
+                    .into(imageViewAvatar)
+        }
     }
 
     private fun selectImage() {
@@ -160,7 +166,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         when (requestCode) {
             SELECT_IMAGE_RC -> if (resultCode == Activity.RESULT_OK) {
                 imageUri = data?.data
-                Picasso.with(this@HomeActivity)
+                Picasso.with(this)
                         .load(imageUri)
                         .placeholder(R.drawable.ic_image_black_24dp)
                         .placeholder(R.drawable.ic_image_black_24dp)
@@ -181,7 +187,17 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     }
 
             val bytes = ByteArrayOutputStream().use {
-                contentResolver.openInputStream(imageUri).copyTo(it)
+                val width = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP,
+                        72f,
+                        resources.displayMetrics
+                ).toInt()
+                MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
+                        .getResizedBitmap(
+                                width,
+                                width,
+                                false
+                        ).compress(Bitmap.CompressFormat.PNG, 100, it)
                 it.toByteArray()
             }
             val contentType = MediaType.parse(contentResolver.getType(imageUri))
@@ -191,7 +207,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             apiService.uploadImage(body, phone)
                     .awaitResult()
                     .onSuccess {
-                        toast("Upload image successfully: $it")
+                        toast("Upload image successfully")
                         user = it
                         bindHeaderView()
                     }

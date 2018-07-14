@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
 
         buttonContinue.setOnClickListener {
             if (AccountKit.getCurrentAccessToken() != null) {
-                toast("Already login")
+                info("Already login")
                 checkUserIsExistAndRegister()
                 return@setOnClickListener
             }
@@ -51,8 +51,12 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
         launch(UI, parent = parentJob) {
             val spotsDialog = SpotsDialog(this@MainActivity, "Please wait...")
                     .apply { show() }
-
             val account = getCurrentAccount()
+                    .onException {
+                        showExceptionMessage(it)
+                        spotsDialog.dismiss()
+                    }
+                    .getOrNull() ?: return@launch
             val phoneNumber = account.phoneNumber.phoneNumber
 
             if (phoneNumber == null) {
@@ -74,7 +78,7 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
                         }
                     }.onSuccess {
                         info(it)
-                        toast("User with phone $phoneNumber already exists. Navigate to home...")
+                        info("User with phone $phoneNumber already exists. Navigate to home...")
                         startActivity<HomeActivity>(USER to it)
                         finish()
                         return@launch
@@ -149,7 +153,7 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
     }
 
     private fun showExceptionMessage(it: Throwable) {
-        toast(it.message ?: "Unknown error")
+        toast(it.message ?: "An unknown error occurred")
     }
 
     private fun phoneLogin() {
@@ -175,9 +179,10 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
                     else -> {
                         loginResult.accessToken
                                 ?.let {
-                                    toast("Success: ${it.accountId}")
+                                    info("Success: ${it.accountId}")
                                 }
-                                ?: toast("Success: %s...".format(loginResult.authorizationCode?.substring(0, 10)))
+                                ?: info("Success: %s...".format(loginResult.authorizationCode?.substring(0, 10)))
+                        toast("Login successfully")
                         checkUserIsExistAndRegister()
                     }
                 }
