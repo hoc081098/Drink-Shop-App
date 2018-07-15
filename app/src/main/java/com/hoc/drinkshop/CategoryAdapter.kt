@@ -23,7 +23,7 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAda
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(item: Category?, onClickListener: (Category) -> Unit) = item?.let { category ->
-            Picasso.with(imageCategory.context)
+            Picasso.get()
                     .load(category.imageUrl)
                     .fit()
                     .error(R.drawable.ic_image_black_24dp)

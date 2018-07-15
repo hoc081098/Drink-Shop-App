@@ -40,19 +40,24 @@ class DrinkAdapter(
         private val imageFav = itemView.imageFav!!
         private val textNumberOfStars = itemView.textNumberOfStars!!
         private val textDrinkPrice = itemView.textDrinkPrice!!
+        private val cardView = itemView.cardView
 
         fun bind(item: Drink?) = item?.let { drink ->
             textDrinkName.text = drink.name
             textDrinkPrice.text = itemView.context.getString(R.string.price, decimalFormatPrice.format(drink.price))
             textNumberOfStars.text = decimalFormatStarCount.format(drink.starCount.toLong())
-            Picasso.with(imageDrink.context)
+            Picasso.get()
                     .load(drink.imageUrl)
                     .fit()
                     .error(R.drawable.ic_image_black_24dp)
                     .placeholder(R.drawable.ic_image_black_24dp)
                     .into(imageDrink)
 
-            imageAddToCart.setOnClickListener { onCLickListener(drink) }
+            View.OnClickListener { onCLickListener(drink) }.let {
+                imageAddToCart.setOnClickListener(it)
+                cardView.setOnClickListener(it)
+            }
+
 
             val isFavorite = userPhone in drink.stars
             when {

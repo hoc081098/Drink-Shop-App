@@ -1,6 +1,7 @@
 package com.hoc.drinkshop
 
 import android.os.Bundle
+import android.support.v4.view.ViewCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.recyclerview.extensions.ListAdapter
@@ -66,7 +67,7 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
         drink = intent.getParcelableExtra(DrinkActivity.DRINK)
 
         textDrinkName.text = drink.name
-        Picasso.with(this)
+        Picasso.get()
                 .load(drink.imageUrl)
                 .fit()
                 .error(R.drawable.ic_image_black_24dp)
@@ -77,23 +78,25 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@AddToCartActivity)
             adapter = toppingAdapter
+            ViewCompat.setNestedScrollingEnabled(this, false)
         }
 
         getTopping()
 
         buttonAddToCart.setOnClickListener {
-
             when {
                 radioGroupCupSize.checkedRadioButtonId == -1 -> toast("Please choose cup size")
                 radioGroupSugar.checkedRadioButtonId == -1 -> toast("Please choose sugar")
                 radioGroupIce.checkedRadioButtonId == -1 -> toast("Please choose ice")
-                else -> showConfirmDialog(
-                        numberButton.number.toInt(),
-                        editTextComment.text.toString(),
-                        getCupSize(radioGroupCupSize.checkedRadioButtonId),
-                        getSugar(radioGroupSugar.checkedRadioButtonId),
-                        getIce(radioGroupIce.checkedRadioButtonId)
-                )
+                else -> {
+                    showConfirmDialog(
+                            numberButton.number.toInt(),
+                            editTextComment.text.toString(),
+                            getCupSize(radioGroupCupSize.checkedRadioButtonId),
+                            getSugar(radioGroupSugar.checkedRadioButtonId),
+                            getIce(radioGroupIce.checkedRadioButtonId)
+                    )
+                }
             }
 
         }
@@ -110,7 +113,7 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
             textSugar.text = "Sugar: $sugar%"
             textIce.text = "Ice: $ice%"
             textToppingExtras.text = checkedTopping.joinToString("\n") { it.name }
-            Picasso.with(context)
+            Picasso.get()
                     .load(drink.imageUrl)
                     .fit()
                     .error(R.drawable.ic_image_black_24dp)

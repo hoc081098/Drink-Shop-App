@@ -4,11 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="2dp"
-    app:cardElevation="3dp"
+    app:cardCornerRadius="4dp"
+    app:cardElevation="4dp"
     app:cardPreventCornerOverlap="true"
     app:cardUseCompatPadding="true"
-    app:contentPadding="2dp">
+    app:contentPadding="4dp">
 
     <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -34,6 +34,7 @@
             android:layout_height="wrap_content"
             android:background="#92212121"
             android:fontFamily="@font/nunito_sans"
+            android:padding="2dp"
             android:textAlignment="center"
             android:textColor="@android:color/white"
             android:textSize="16sp"

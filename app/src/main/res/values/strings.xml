@@ -20,4 +20,7 @@
     <string name="text_drink_name_trans">TEXT_DRINK_NAME_TRANS</string>
     <string name="image_drink_trans">IMAGE_DRINK_TRANS</string>
     <string name="price">$%s</string>
+    <string name="todo">TODO</string>
+    <string name="price1">Price</string>
+    <string name="comment">Comment</string>
 </resources>

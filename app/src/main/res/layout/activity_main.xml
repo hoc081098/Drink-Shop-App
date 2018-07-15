@@ -15,27 +15,29 @@
     <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/main_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/main_gradient"
         tools:context=".MainActivity">
 
         <Button
+            android:layout_marginBottom="16dp"
             android:id="@+id/buttonContinue"
             style="@style/AppTheme.Button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
             android:layout_marginStart="32dp"
+            android:paddingEnd="24dp"
             android:background="@drawable/round_shape"
             android:drawableEnd="@drawable/ic_navigate_next_white_24dp"
             android:drawablePadding="12dp"
             android:elevation="0dp"
             android:fontFamily="@font/nunito_sans"
-            android:paddingBottom="12dp"
-            android:paddingEnd="24dp"
             android:paddingStart="24dp"
             android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:visibility="invisible"
             android:stateListAnimator="@null"
             android:text="@string/continue_string"
             android:textColor="@android:color/white"
@@ -45,14 +47,15 @@
             app:layout_constraintStart_toStartOf="parent" />
 
         <TextView
-            android:id="@+id/textView12"
+            android:id="@+id/textViewDrinkShop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:fontFamily="@font/aclonica"
             android:text="Drink shop"
-            android:textColor="#ffffff"
+            android:textColor="@color/colorPrimary"
             android:textSize="28sp"
+            android:visibility="invisible"
             app:layout_constraintBottom_toTopOf="@+id/buttonContinue"
             app:layout_constraintStart_toStartOf="@+id/buttonContinue" />
     </android.support.constraint.ConstraintLayout>

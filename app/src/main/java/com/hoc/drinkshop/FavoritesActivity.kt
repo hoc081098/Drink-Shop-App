@@ -66,12 +66,12 @@ class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit) : List
         private val cardView = itemView.cardView
         private val textPrice = itemView.textPrice
         private val imageFav = itemView.imageFav
-        val swipableView = itemView.background_layout!!
+        val swipableView = itemView.foreground_layout!!
 
         fun bind(item: Drink?, onClickListener: (Drink, Int) -> Unit) = item?.let { drink ->
             textName.text = drink.name
             textPrice.text = itemView.context.getString(R.string.price, decimalFormatPrice.format(drink.price))
-            Picasso.with(imageView.context)
+            Picasso.get()
                     .load(drink.imageUrl)
                     .fit()
                     .placeholder(R.drawable.ic_image_black_24dp)
@@ -155,7 +155,7 @@ class FavoritesActivity : AppCompatActivity(), AnkoLogger {
                 .distinctUntilChanged()
                 .map { it.toLowerCase() }
                 .switchMap { queryString ->
-                    toast("onNext: $queryString")
+                    info("onNext: $queryString")
                     apiService
                             .getDrinksFlowable(
                                     name = if (queryString.isBlank()) null else queryString,
@@ -186,7 +186,9 @@ class FavoritesActivity : AppCompatActivity(), AnkoLogger {
 
 
     private fun onSwiped(position: Int) {
-        toast("onSwiped $position")
+        if (position in drinks.indices) {
+            removeFromFavorites(user.phone, drinks[position])
+        }
     }
 
     override fun onBackPressed() {

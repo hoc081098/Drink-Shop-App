@@ -23,6 +23,9 @@ import com.daimajia.slider.library.SliderTypes.BaseSliderView
 import com.daimajia.slider.library.SliderTypes.TextSliderView
 import com.facebook.accountkit.AccountKit
 import com.hoc.drinkshop.MainActivity.Companion.USER
+import com.squareup.picasso.Callback
+import com.squareup.picasso.MemoryPolicy
+import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
@@ -39,6 +42,7 @@ import org.jetbrains.anko.*
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
 import java.io.ByteArrayOutputStream
+import java.lang.Exception
 
 fun Bitmap.getResizedBitmap(newWidth: Int, newHeight: Int, isNecessaryToKeepOrig: Boolean): Bitmap {
     val matrix = Matrix().apply {
@@ -59,7 +63,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val parentJob = Job()
     private val categoryAdapter = CategoryAdapter(::navigateToDrinkActivity)
     private var doubleBackToExist = false
-    private var imageUri: Uri? = null
     private lateinit var user: User
     private lateinit var headerView: View
 
@@ -83,10 +86,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         toggle.syncState()
         nav_view.setNavigationItemSelectedListener(this)
 
-        user = intent.getParcelableExtra(USER)
+        user = intent.getParcelableExtra<User>(USER)
         nav_view.getHeaderView(0).apply {
             headerView = this
-            bindHeaderView()
+            bindHeaderView(user)
             imageViewAvatar.setOnClickListener { selectImage() }
         }
 
@@ -107,16 +110,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         launch(UI, parent = parentJob) {
             try {
-                info("start getData")
                 val banners = getBanners.await()
-                info("1")
                 val categories = getAllCategories.await()
-                info("2")
                 val user = getUser.await()
-                info("3")
-                swipeLayout.post { swipeLayout.isRefreshing = false }
 
-                info("${banners.size} ${categories.size} $user")
+                swipeLayout.post { swipeLayout.isRefreshing = false }
                 //update slider layout
                 sliderLayout.removeAllSliders()
                 banners.forEach { (_, name, imageUrl) ->
@@ -131,28 +129,37 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 categoryAdapter.submitList(categories)
 
                 //update navigation view
-                this@HomeActivity.user = user.also { info("User: $user") }
-                bindHeaderView()
+                bindHeaderView(user.also { this@HomeActivity.user = it })
             } catch (exception: Throwable) {
 
             }
         }
     }
 
-    private fun bindHeaderView() = headerView.run {
+    private fun bindHeaderView(user: User) = headerView.run {
         info("Bind view: $user")
         textUserName.text = user.name
         textUserPhone.text = user.phone
 
         val imageUrl = user.imageUrl
-        toast("ImageUrl: $BASE_URL$imageUrl")
+        info("ImageUrl: $BASE_URL$imageUrl")
         if (!imageUrl.isNullOrEmpty()) {
-            Picasso.with(context)
+            Picasso.get()
                     .load("$BASE_URL$imageUrl")
+                    .memoryPolicy(MemoryPolicy.NO_CACHE)
+                    .networkPolicy(NetworkPolicy.NO_CACHE)
+                    .noFade()
                     .fit()
-                    .error(R.drawable.ic_account_circle_black_24dp)
+                    .centerCrop()
                     .placeholder(R.drawable.ic_account_circle_black_24dp)
-                    .into(imageViewAvatar)
+                    .error(R.drawable.ic_account_circle_black_24dp)
+                    .into(imageViewAvatar, object : Callback {
+                        override fun onSuccess() {}
+
+                        override fun onError(e: Exception) {
+                            toast("Load avatar failed: ${e.message}")
+                        }
+                    })
         }
     }
 
@@ -165,13 +172,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             SELECT_IMAGE_RC -> if (resultCode == Activity.RESULT_OK) {
-                imageUri = data?.data
-                Picasso.with(this)
-                        .load(imageUri)
-                        .placeholder(R.drawable.ic_image_black_24dp)
-                        .placeholder(R.drawable.ic_image_black_24dp)
-                        .into(headerView.imageViewAvatar)
-                uploadImage(imageUri, user.phone)
+                uploadImage(data?.data, user.phone)
             }
         }
     }
@@ -208,8 +209,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     .awaitResult()
                     .onSuccess {
                         toast("Upload image successfully")
-                        user = it
-                        bindHeaderView()
+                        bindHeaderView(it.also { user = it })
                     }
                     .onException {
                         toast("Cannot upload image because ${it.message ?: "unknown error"}")

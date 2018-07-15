@@ -1,15 +1,26 @@
 package com.hoc.drinkshop
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
+import android.support.transition.Fade
+import android.support.transition.Slide
+import android.support.transition.TransitionManager
+import android.support.transition.TransitionSet
+import android.support.v4.view.animation.LinearOutSlowInInterpolator
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.view.Gravity
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import com.facebook.accountkit.AccountKit
 import com.facebook.accountkit.AccountKitLoginResult
 import com.facebook.accountkit.ui.AccountKitActivity
 import com.facebook.accountkit.ui.AccountKitActivity.ACCOUNT_KIT_ACTIVITY_CONFIGURATION
 import com.facebook.accountkit.ui.AccountKitConfiguration
 import com.facebook.accountkit.ui.LoginType
+import com.hoc.drinkshop.transitions.Recolor
+import com.hoc.drinkshop.transitions.Scale
 import com.rengwuxian.materialedittext.validation.METValidator
 import com.szagurskii.patternedtextwatcher.PatternedTextWatcher
 import dmax.dialog.SpotsDialog
@@ -44,6 +55,32 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
             }
 
             phoneLogin()
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (hasFocus) {
+            TransitionSet().addTransition(Fade(Fade.IN))
+                    .addTransition(Scale(0.7f))
+                    .addTransition(Recolor())
+                    .setDuration(4_000L)
+                    .addTarget(textViewDrinkShop)
+                    .excludeTarget(buttonContinue, true)
+                    .setInterpolator(LinearOutSlowInInterpolator())
+                    .let {
+                        TransitionManager.beginDelayedTransition(main_layout, it)
+                        textViewDrinkShop.visibility = View.VISIBLE
+                        textViewDrinkShop.textColor = Color.WHITE
+                    }
+            Slide(Gravity.END)
+                    .addTarget(buttonContinue)
+                    .excludeTarget(textViewDrinkShop, true)
+                    .setDuration(3_000L)
+                    .setInterpolator(AccelerateDecelerateInterpolator())
+                    .let {
+                        TransitionManager.beginDelayedTransition(main_layout, it)
+                        buttonContinue.visibility = View.VISIBLE
+                    }
         }
     }
 

@@ -2,17 +2,17 @@ package com.hoc.drinkshop
 
 import android.app.Application
 import org.koin.android.ext.android.startKoin
-import org.koin.dsl.module.applicationContext
+import org.koin.dsl.module.module
 
-val appModule = applicationContext {
-    bean { MyApp.app }
+val appModule = module {
+    single { MyApp.app }
 }
 
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         app = this
-        startKoin(listOf(retrofitModule, appModule, cartModule))
+        startKoin(this, listOf(retrofitModule, appModule, cartModule))
     }
 
     companion object {

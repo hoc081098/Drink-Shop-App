@@ -4,7 +4,7 @@ import android.app.Application
 import android.arch.persistence.room.*
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import org.koin.dsl.module.applicationContext
+import org.koin.dsl.module.module
 
 
 @Entity(tableName = "carts")
@@ -18,8 +18,7 @@ data class Cart(
         val ice: Int,
         val price: Double,
         @PrimaryKey(autoGenerate = true) var id: Int = 0
-) {
-}
+)
 
 @Dao
 interface CartDao {
@@ -103,13 +102,13 @@ class CartRepository(private val dao: CartDao) : CartDataSource {
 
 }
 
-val cartModule = applicationContext {
-    bean {
+val cartModule = module {
+    single {
         Room.databaseBuilder(get<Application>(), LocalDatabase::class.java, LocalDatabase.CART_DB_NAME)
                 .build()
     }
 
-    bean { get<LocalDatabase>().cartDao() }
+    single { get<LocalDatabase>().cartDao() }
 
-    bean { CartRepository(get()) } bind CartDataSource::class
+    single { CartRepository(get()) } bind CartDataSource::class
 }

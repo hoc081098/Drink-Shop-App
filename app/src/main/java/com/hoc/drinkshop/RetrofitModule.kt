@@ -5,27 +5,27 @@ import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import org.koin.dsl.module.applicationContext
+import org.koin.dsl.module.module
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.*
 
-val retrofitModule = applicationContext {
-    bean<Moshi> {
+val retrofitModule = module {
+    single<Moshi> {
         Moshi.Builder()
                 .add(Date::class.java, Rfc3339DateJsonAdapter())
                 .build()
     }
 
-    bean { MoshiConverterFactory.create(get()) } bind Converter.Factory::class
+    single { MoshiConverterFactory.create(get()) } bind Converter.Factory::class
 
-    bean<Interceptor> {
+    single<Interceptor> {
         HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
     }
 
-    bean<OkHttpClient> {
+    single<OkHttpClient> {
         val builder = OkHttpClient.Builder()
         if (BuildConfig.DEBUG) {
             builder.addInterceptor(get())
@@ -34,7 +34,7 @@ val retrofitModule = applicationContext {
         builder.build()
     }
 
-    bean<Retrofit> {
+    single<Retrofit> {
         Retrofit.Builder()
                 .addConverterFactory(get())
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
@@ -42,7 +42,7 @@ val retrofitModule = applicationContext {
                 .baseUrl(BASE_URL)
                 .build()
     }
-    bean<ApiService> {
+    single<ApiService> {
         get<Retrofit>().create(ApiService::class.java)
     }
 }

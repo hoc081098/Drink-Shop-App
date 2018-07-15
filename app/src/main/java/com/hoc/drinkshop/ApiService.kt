@@ -231,7 +231,7 @@ suspend fun <T : Any> Call<T>.await(): T = suspendCancellableCoroutine { continu
 }
 
 fun <T> Call<*>.registerOnCompletion(continuation: CancellableContinuation<T>) {
-    continuation.invokeOnCompletion {
+    continuation.invokeOnCancellation {
         if (continuation.isCancelled) {
             cancel()
         }
