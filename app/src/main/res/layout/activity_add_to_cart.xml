@@ -14,6 +14,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:fillViewport="true"
+        android:scrollbars="vertical"
         app:layout_constraintBottom_toTopOf="@+id/buttonAddToCart"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -66,6 +67,15 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView4">
 
+                <android.support.constraint.Barrier
+                    android:id="@+id/barrier2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:barrierDirection="start"
+                    app:constraint_referenced_ids="textView000,textView6"
+                    tools:ignore="MissingConstraints"
+                    tools:layout_editor_absoluteX="376dp" />
+
                 <TextView
                     android:id="@+id/textView000"
                     android:layout_width="0dp"
@@ -103,8 +113,9 @@
 
                 <RadioGroup
                     android:id="@+id/radioGroupCupSize"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    app:layout_constraintEnd_toEndOf="@+id/barrier2"
                     app:layout_constraintStart_toStartOf="parent">
 
                     <RadioButton
@@ -339,11 +350,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="@android:color/white"
-                android:nestedScrollingEnabled="false"
                 android:scrollbars="none"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textView10" />
+                app:layout_constraintTop_toBottomOf="@+id/textView10"
+                tools:listitem="@layout/topping_item_layout" />
 
         </android.support.constraint.ConstraintLayout>
     </android.support.v4.widget.NestedScrollView>
@@ -371,7 +382,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                app:layout_constraintGuide_percent="0.65" />
+                app:layout_constraintGuide_percent="0.5" />
 
             <ImageView
                 android:id="@+id/imageView2"
@@ -409,12 +420,13 @@
             <com.cepheuen.elegantnumberbutton.view.ElegantNumberButton
                 android:id="@+id/numberButton"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_marginEnd="8dp"
                 android:layout_marginBottom="16dp"
                 app:backGroundColor="#424242"
                 app:finalNumber="100"
                 app:initialNumber="1"
+                app:textSize="12sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@+id/guideline"
@@ -438,7 +450,7 @@
         android:lines="2"
         android:maxLines="2"
         android:minLines="2"
-        android:padding="4dp"
+        android:padding="8dp"
         android:textColor="@color/colorTextPrimary"
         android:textSize="14sp"
         android:textStyle="italic"

@@ -23,4 +23,6 @@
     <string name="todo">TODO</string>
     <string name="price1">Price</string>
     <string name="comment">Comment</string>
+    <string name="cart">Cart</string>
+    <string name="place_order">PLACE ORDER</string>
 </resources>

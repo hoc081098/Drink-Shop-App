@@ -10,7 +10,6 @@ import android.os.Handler
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.support.design.widget.NavigationView
-import android.support.design.widget.Snackbar
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
@@ -23,10 +22,17 @@ import com.daimajia.slider.library.SliderTypes.BaseSliderView
 import com.daimajia.slider.library.SliderTypes.TextSliderView
 import com.facebook.accountkit.AccountKit
 import com.hoc.drinkshop.MainActivity.Companion.USER
+import com.nex3z.notificationbadge.NotificationBadge
 import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
+import io.reactivex.rxkotlin.subscribeBy
+import io.reactivex.schedulers.Schedulers
+import kotlinx.android.synthetic.main.action_cart_layout.view.*
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
@@ -60,11 +66,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private val apiService by inject<ApiService>()
     private val retrofit by inject<Retrofit>()
+    private val cartDataSource by inject<CartDataSource>()
     private val parentJob = Job()
     private val categoryAdapter = CategoryAdapter(::navigateToDrinkActivity)
     private var doubleBackToExist = false
     private lateinit var user: User
     private lateinit var headerView: View
+    private var badge: NotificationBadge? = null
+    private val compositeDisposable = CompositeDisposable()
 
     private fun navigateToDrinkActivity(category: Category) {
         startActivity<DrinkActivity>(CATEGORY to category, MainActivity.USER to user)
@@ -74,11 +83,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
         setSupportActionBar(toolbar)
-
-        fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
-        }
 
         val toggle = ActionBarDrawerToggle(
                 this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
@@ -225,6 +229,26 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         sliderLayout.startAutoCycle()
     }
 
+    override fun onResume() {
+        super.onResume()
+        updateCartCount()
+    }
+
+    private fun updateCartCount() {
+        cartDataSource.getCountCart()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                        onNext = { badge?.setNumber(it) },
+                        onError = { info("getCountCart error: $it") }
+                ).addTo(compositeDisposable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        compositeDisposable.clear()
+    }
+
     override fun onStop() {
         super.onStop()
         sliderLayout.stopAutoCycle()
@@ -250,6 +274,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.home, menu)
+        menu.findItem(R.id.action_cart).actionView.run {
+            this@HomeActivity.badge = badge
+            setOnClickListener {
+                startActivity<CartsActivity>()
+            }
+        }
+
+        updateCartCount()
         return true
     }
 
@@ -257,9 +289,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        when (item.itemId) {
-            R.id.action_settings -> return true
-            else -> return super.onOptionsItemSelected(item)
+        return when (item.itemId) {
+            R.id.action_cart -> true
+            R.id.action_search -> {
+                startActivity<SearchActivity>(USER to user)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 

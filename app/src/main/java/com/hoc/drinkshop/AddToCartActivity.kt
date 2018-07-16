@@ -24,11 +24,14 @@ import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
 
-class ToppingAdapter(private val onClickListener: (Drink, Boolean) -> Unit) : ListAdapter<Drink, ToppingAdapter.ViewHolder>(diffCallback) {
+class ToppingAdapter(private val onClickListener: (Drink, Boolean) -> Unit)
+    : ListAdapter<Drink, ToppingAdapter.ViewHolder>(diffCallback) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
             ViewHolder(parent inflate R.layout.topping_item_layout)
 
@@ -75,7 +78,7 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
                 .into(imageView2)
 
         recyclerTopping.run {
-            setHasFixedSize(true)
+            setHasFixedSize(false)
             layoutManager = LinearLayoutManager(this@AddToCartActivity)
             adapter = toppingAdapter
             ViewCompat.setNestedScrollingEnabled(this, false)
@@ -103,52 +106,62 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
     }
 
     private fun showConfirmDialog(number: Int, comment: String, cupSize: String, sugar: Int, ice: Int) {
-        val title = "${drink.name} x$number size $cupSize"
-        val totalPrice = number * (drink.price + checkedTopping.sumByDouble { it.price }
-                + if (cupSize == "L") 3 else 0)
+        doAsync {
+            val title = "${drink.name} x$number size $cupSize"
+            val totalPrice = number * (drink.price + checkedTopping.sumByDouble { it.price }
+                    + if (cupSize == "L") 3 else 0)
+            val toppingExtras = checkedTopping.joinToString("\n") { it.name }
+            onComplete {
+                val view = it?.let {
+                    it.layoutInflater?.inflate(R.layout.dialog_confirm, null)?.apply {
+                        textTitle.text = title
+                        textPrice.text = "$$totalPrice"
+                        textSugar.text = "Sugar: $sugar%"
+                        textIce.text = "Ice: $ice%"
+                        textToppingExtras.text = toppingExtras
+                        Picasso.get()
+                                .load(drink.imageUrl)
+                                .fit()
+                                .error(R.drawable.ic_image_black_24dp)
+                                .placeholder(R.drawable.ic_image_black_24dp)
+                                .into(imageConfirm)
+                    }
+                } ?: return@onComplete
 
-        val view = layoutInflater.inflate(R.layout.dialog_confirm, null).apply {
-            textTitle.text = title
-            textPrice.text = "$$totalPrice"
-            textSugar.text = "Sugar: $sugar%"
-            textIce.text = "Ice: $ice%"
-            textToppingExtras.text = checkedTopping.joinToString("\n") { it.name }
-            Picasso.get()
-                    .load(drink.imageUrl)
-                    .fit()
-                    .error(R.drawable.ic_image_black_24dp)
-                    .placeholder(R.drawable.ic_image_black_24dp)
-                    .into(imageConfirm)
+                AlertDialog.Builder(it)
+                        .setView(view)
+                        .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                        .setPositiveButton("Confirm") { dialog, _ ->
+                            dialog.dismiss()
+
+                            val cart = Cart(
+                                    drink.name,
+                                    drink.id,
+                                    drink.imageUrl,
+                                    number,
+                                    comment,
+                                    cupSize,
+                                    sugar,
+                                    ice,
+                                    totalPrice
+                            )
+
+                            compositeDisposable += cartDataSource.insertCart(cart)
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribeBy(
+                                            onError = {
+                                                toast("Cannot add to cart because ${it.message
+                                                        ?: "unknown error"}")
+                                            },
+                                            onComplete = { toast("Add to cart success") }
+                                    )
+
+                        }
+                        .create()
+                        .show()
+            }
         }
-
-        AlertDialog.Builder(this)
-                .setView(view)
-                .setPositiveButton("Confirm") { dialog, _ ->
-                    dialog.dismiss()
-
-                    val cart = Cart(
-                            title,
-                            drink.id,
-                            number,
-                            comment,
-                            cupSize,
-                            sugar,
-                            ice,
-                            totalPrice
-                    )
-
-                    compositeDisposable += cartDataSource.insertCart(cart)
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribeBy(onError = {
-                                toast("Cannot add to cart because ${it.message ?: "unknown error"}")
-                            }, onComplete = {
-                                toast("Add to cart success")
-                            })
-
-                }
-                .create()
-                .show()
     }
 
     private fun getIce(checkedRadioButtonId: Int): Int = when (checkedRadioButtonId) {
@@ -175,10 +188,8 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
         launch(UI, parent = parentJob) {
             apiService.getDrinks(menuId = 7)
                     .awaitResult()
-                    .onSuccess {
-                        toast("getTopping: ${it.size}")
-                        toppingAdapter.submitList(it)
-                    }.onException {
+                    .onSuccess { toppingAdapter.submitList(it) }
+                    .onException {
                         toast("Cannot get topping because ${it.message ?: "unknown error"}")
                     }.onError {
                         toast("Cannot get topping because ${retrofit.parseResultErrorMessage(it.first)}")

@@ -42,7 +42,9 @@
             android:theme="@style/AppTheme" />
         <activity android:name=".AddToCartActivity" />
         <activity android:name=".DrinkActivity" />
-        <activity android:name=".FavoritesActivity"></activity>
+        <activity android:name=".FavoritesActivity" />
+        <activity android:name=".CartsActivity" />
+        <activity android:name=".SearchActivity"></activity>
     </application>
 
 </manifest>

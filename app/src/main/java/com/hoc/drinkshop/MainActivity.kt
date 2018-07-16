@@ -60,25 +60,29 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus) {
-            TransitionSet().addTransition(Fade(Fade.IN))
-                    .addTransition(Scale(0.7f))
-                    .addTransition(Recolor())
-                    .setDuration(4_000L)
+            val fadeIn = Fade(Fade.IN)
                     .addTarget(textViewDrinkShop)
-                    .excludeTarget(buttonContinue, true)
                     .setInterpolator(LinearOutSlowInInterpolator())
+            val scale = Scale(0.7f)
+                    .addTarget(textViewDrinkShop)
+                    .setInterpolator(LinearOutSlowInInterpolator())
+            val recolor = Recolor()
+                    .addTarget(textViewDrinkShop)
+                    .setInterpolator(LinearOutSlowInInterpolator())
+            val slideEnd = Slide(Gravity.END)
+                    .addTarget(buttonContinue)
+                    .setInterpolator(AccelerateDecelerateInterpolator())
+
+            TransitionSet()
+                    .addTransition(fadeIn)
+                    .addTransition(scale)
+                    .addTransition(recolor)
+                    .addTransition(slideEnd)
+                    .setDuration(3_000L)
                     .let {
                         TransitionManager.beginDelayedTransition(main_layout, it)
                         textViewDrinkShop.visibility = View.VISIBLE
                         textViewDrinkShop.textColor = Color.WHITE
-                    }
-            Slide(Gravity.END)
-                    .addTarget(buttonContinue)
-                    .excludeTarget(textViewDrinkShop, true)
-                    .setDuration(3_000L)
-                    .setInterpolator(AccelerateDecelerateInterpolator())
-                    .let {
-                        TransitionManager.beginDelayedTransition(main_layout, it)
                         buttonContinue.visibility = View.VISIBLE
                     }
         }

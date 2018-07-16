@@ -11,6 +11,7 @@ import org.koin.dsl.module.module
 data class Cart(
         val name: String,
         val drinkId: Int,
+        val imageUrl: String,
         val number: Int,
         val comment: String,
         val cupSize: String,

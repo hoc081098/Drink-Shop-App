@@ -185,9 +185,12 @@ class FavoritesActivity : AppCompatActivity(), AnkoLogger {
     }
 
 
-    private fun onSwiped(position: Int) {
-        if (position in drinks.indices) {
-            removeFromFavorites(user.phone, drinks[position])
+    private fun onSwiped(viewHolder: RecyclerView.ViewHolder) {
+        if (viewHolder is FavoritesAdapter.ViewHolder) {
+            val position = viewHolder.adapterPosition
+            if (position in drinks.indices) {
+                removeFromFavorites(user.phone, drinks[position])
+            }
         }
     }
 
@@ -201,7 +204,7 @@ class FavoritesActivity : AppCompatActivity(), AnkoLogger {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_favorites, menu)
-        menu?.findItem(R.id.action_search).let { search_view.setMenuItem(it) }
+        menu?.findItem(R.id.action_search)?.let(search_view::setMenuItem)
         return true
     }
 

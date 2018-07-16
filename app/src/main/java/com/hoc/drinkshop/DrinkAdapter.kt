@@ -80,7 +80,7 @@ class DrinkAdapter(
             override fun areContentsTheSame(oldItem: Drink?, newItem: Drink?) = oldItem == newItem
         }
         @JvmField
-        val decimalFormatPrice = DecimalFormat.getInstance()
+        val decimalFormatPrice = DecimalFormat.getInstance()!!
         @JvmField
         val decimalFormatStarCount = DecimalFormat("###,###", DecimalFormatSymbols().apply { groupingSeparator = ' ' })
     }
