@@ -1,38 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/filter_bottom_sheet"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/white"
-    app:behavior_hideable="true"
+    android:layout_height="wrap_content"
+    android:background="@drawable/round_shape1"
+    app:behavior_hideable="false"
     app:behavior_peekHeight="48dp"
     app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
 
-
-    <com.crystal.crystalrangeseekbar.widgets.CrystalRangeSeekbar
-        android:id="@+id/crystalRangeSeekbar"
-        android:layout_width="match_parent"
+    <com.appyvet.materialrangebar.RangeBar
+        android:id="@+id/price_rangebar"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:padding="8dp"
-        app:bar_color="@color/colorPrimary"
-        app:corner_radius="10"
-        app:data_type="_integer"
-        app:gap="10"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:padding="4dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textView12"
-        app:max_start_value="20"
-        app:max_value="100"
-        app:min_start_value="1"
-        app:min_value="1" />
+        app:layout_constraintTop_toBottomOf="@+id/textView12"
+        app:mrb_connectingLineColor="@color/colorAccent"
+        app:mrb_pinColor="@color/colorPrimary"
+        app:mrb_pinMaxFont="12sp"
+        app:mrb_pinPadding="4dp"
+        app:mrb_pinTextColor="@android:color/white"
+        app:mrb_rangeBarPaddingBottom="24dp"
+        app:mrb_rangeBar_rounded="true"
+        app:mrb_selectorBoundaryColor="@color/colorAccent"
+        app:mrb_selectorBoundarySize="2dp"
+        app:mrb_selectorColor="@color/colorAccent"
+        app:mrb_selectorSize="12dp"
+        app:mrb_temporaryPins="true"
+        app:mrb_tickColor="@android:color/white"
+        app:mrb_tickEnd="10"
+        app:mrb_tickHeight="2dp"
+        app:mrb_tickInterval="1"
+        app:mrb_tickStart="5" />
 
     <TextView
-        android:id="@+id/textView12"
+        android:id="@+id/buttonFilter"
         android:layout_width="0dp"
         android:layout_height="48dp"
-        android:background="@color/colorPrimaryLight"
+        android:background="@drawable/ripple_shape"
+        android:clickable="true"
+        android:focusable="true"
         android:fontFamily="@font/nunito_sans"
         android:gravity="center"
         android:text="Filter"
@@ -41,5 +54,126 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Spinner
+        android:id="@+id/spinnerLimit"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView13"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/barrier3"
+        app:layout_constraintTop_toTopOf="@+id/textView13" />
+
+    <Spinner
+        android:id="@+id/spinnerSortName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView14"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@id/barrier3"
+        app:layout_constraintTop_toTopOf="@+id/textView14" />
+
+    <Spinner
+        android:id="@+id/spinnerSortPrice"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView16"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@id/barrier3"
+        app:layout_constraintTop_toTopOf="@+id/textView16" />
+
+    <Spinner
+        android:id="@+id/spinnerSortStarCount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="5dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView17"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@id/barrier3"
+        app:layout_constraintTop_toTopOf="@+id/textView17" />
+
+    <TextView
+        android:id="@+id/textView13"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/nunito_sans"
+        android:text="Limit number"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/price_rangebar" />
+
+    <TextView
+        android:id="@+id/textView14"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/nunito_sans"
+        android:text="Sort name"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView13" />
+
+    <TextView
+        android:id="@+id/textView16"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/nunito_sans"
+        android:text="Sort price"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView14" />
+
+    <TextView
+        android:id="@+id/textView17"
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:fontFamily="@font/nunito_sans"
+        android:text="Sort star count"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView16" />
+
+    <android.support.constraint.Barrier
+        android:id="@+id/barrier3"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:barrierDirection="end"
+        app:constraint_referenced_ids="textView13,textView14,textView16,textView17"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingConstraints"
+        tools:layout_editor_absoluteX="100dp" />
+
+    <TextView
+        android:id="@+id/textView12"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:fontFamily="@font/nunito_sans"
+        android:text="Select price"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonFilter" />
 
 </android.support.constraint.ConstraintLayout>

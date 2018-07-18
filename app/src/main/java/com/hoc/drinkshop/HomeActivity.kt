@@ -146,10 +146,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         textUserPhone.text = user.phone
 
         val imageUrl = user.imageUrl
-        info("ImageUrl: $BASE_URL$imageUrl")
         if (!imageUrl.isNullOrEmpty()) {
             Picasso.get()
-                    .load("$BASE_URL$imageUrl")
+                    .load(imageUrl)
                     .memoryPolicy(MemoryPolicy.NO_CACHE)
                     .networkPolicy(NetworkPolicy.NO_CACHE)
                     .noFade()

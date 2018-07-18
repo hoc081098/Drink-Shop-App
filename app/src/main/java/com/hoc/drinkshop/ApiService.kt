@@ -76,6 +76,8 @@ enum class SortOrder {
     }
 }
 
+data class PriceResponse(val price: Double)
+
 interface ApiService {
     /*  USER */
     @GET("users")
@@ -123,7 +125,8 @@ interface ApiService {
             @Query("max_star") maxStar: Double? = null,
             @Query("sort_name") sortName: SortOrder? = null,
             @Query("sort_star") sortStar: SortOrder? = null,
-            @Query("sort_price") sortPrice: SortOrder? = null
+            @Query("sort_price") sortPrice: SortOrder? = null,
+            @Query("limit") limit: Int? = null
     ): Call<List<Drink>>
 
     @GET("drinks")
@@ -137,12 +140,18 @@ interface ApiService {
             @Query("max_star") maxStar: Double? = null,
             @Query("sort_name") sortName: SortOrder? = null,
             @Query("sort_star") sortStar: SortOrder? = null,
-            @Query("sort_price") sortPrice: SortOrder? = null
-
+            @Query("sort_price") sortPrice: SortOrder? = null,
+            @Query("limit") limit: Int? = null
     ): Flowable<List<Drink>>
 
     @GET("drinks/{drink_id}")
     fun getDrinkById(): Call<Drink>
+
+    @GET("drinks/price/min")
+    fun getMinPrice(): RxObservable<PriceResponse>
+
+    @GET("drinks/price/max")
+    fun getMaxPrice(): RxObservable<PriceResponse>
 
     @FormUrlEncoded
     @POST("drinks/star")
