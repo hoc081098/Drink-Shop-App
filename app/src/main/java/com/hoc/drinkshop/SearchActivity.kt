@@ -1,15 +1,17 @@
 package com.hoc.drinkshop
 
 import android.os.Bundle
-import android.support.design.widget.BottomSheetBehavior
-import android.support.transition.Fade
-import android.support.transition.TransitionManager
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.GridLayoutManager
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ArrayAdapter
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.widget.TextViewCompat
+import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED
+import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
 import com.hoc.drinkshop.MainActivity.Companion.USER
 import com.miguelcatalan.materialsearchview.MaterialSearchView
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -71,7 +73,7 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
         search_view.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 performSearch(query)
-                return true
+                return false
             }
 
             override fun onQueryTextChange(newText: String?) = false
@@ -88,7 +90,7 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
                 " sortName=[$sortName], limit=[$limit], minPrice=[$minPrice], maxPrice=[$maxPrice]")
 
         launch(UI) {
-            TransitionManager.beginDelayedTransition(content_layout, Fade())
+            //TransitionManager.beginDelayedTransition(content_layout, Fade())
             textViewEmpty.visibility = View.INVISIBLE
             recyclerSearch.visibility = View.INVISIBLE
             progressBar.visibility = View.VISIBLE
@@ -108,7 +110,7 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
                     .onSuccess {
                         drinks = it.toMutableList()
 
-                        TransitionManager.beginDelayedTransition(content_layout, Fade())
+                        //TransitionManager.beginDelayedTransition(content_layout, Fade())
                         progressBar.visibility = View.INVISIBLE
                         if (drinks.isNotEmpty()) {
                             recyclerSearch.visibility = View.VISIBLE
@@ -166,17 +168,45 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
     }
 
     private fun setupFilterBottomSheet() {
+        val bottomSheetBehavior = BottomSheetBehavior.from(filter_bottom_sheet)
+        val upDrawable = ContextCompat.getDrawable(this, R.drawable.ic_arrow_drop_up_black_24dp)
+        val dowwnDrawable = ContextCompat.getDrawable(this, R.drawable.ic_arrow_drop_down_black_24dp)
+
+        bottomSheetBehavior.setBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(p0: View, p1: Float) = Unit
+
+            override fun onStateChanged(v: View, state: Int) {
+                if (state in listOf(STATE_COLLAPSED, STATE_EXPANDED))
+                    TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                            buttonFilter,
+                            null,
+                            null,
+                            when (state) {
+                                STATE_COLLAPSED -> upDrawable
+                                else -> dowwnDrawable
+                            },
+                            null
+                    )
+            }
+        })
+
         buttonFilter.setOnClickListener {
-            BottomSheetBehavior.from(filter_bottom_sheet)
-                    .state = BottomSheetBehavior.STATE_EXPANDED
+            bottomSheetBehavior.run {
+                state = when (state) {
+                    STATE_COLLAPSED -> STATE_EXPANDED
+                    STATE_EXPANDED -> STATE_COLLAPSED
+                    else -> return@setOnClickListener
+                }
+            }
         }
+
         setupRangeSeekbar()
         spinnerLimit.adapter = ArrayAdapter(
                 this,
                 android.R.layout.simple_spinner_dropdown_item,
                 (10..100 step 10).toList()
         )
-        spinnerLimit.setSelection(0)
+        spinnerLimit.setSelection(1)
         ArrayAdapter(
                 this,
                 android.R.layout.simple_spinner_dropdown_item,
@@ -216,6 +246,15 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
         menuInflater.inflate(R.menu.menu_favorites, menu)
         menu?.findItem(R.id.action_search)?.let(search_view::setMenuItem)
         return true
+    }
+
+
+    override fun onBackPressed() {
+        if (search_view.isSearchOpen) {
+            search_view.closeSearch()
+        } else {
+            super.onBackPressed()
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {

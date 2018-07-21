@@ -1,12 +1,13 @@
 package com.hoc.drinkshop
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.support.design.widget.Snackbar
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.helper.ItemTouchHelper
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import com.hoc.drinkshop.DrinkAdapter.Companion.decimalFormatPrice
 import com.hoc.drinkshop.MainActivity.Companion.USER
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -90,6 +91,7 @@ class CartsActivity : AppCompatActivity() {
     }
 
     private fun submitOrder() {
+        @SuppressLint("InflateParams")
         val view = layoutInflater.inflate(R.layout.submit_order_layout, null)
         val editTextOtherAddress = view.editTextOtherAddress
         view.radioGroup.setOnCheckedChangeListener { _, checkedId ->

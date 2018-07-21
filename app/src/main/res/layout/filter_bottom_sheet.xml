@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/filter_bottom_sheet"
@@ -8,7 +8,7 @@
     android:background="@drawable/round_shape1"
     app:behavior_hideable="false"
     app:behavior_peekHeight="48dp"
-    app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
     <com.appyvet.materialrangebar.RangeBar
         android:id="@+id/price_rangebar"
@@ -39,7 +39,9 @@
         app:mrb_tickInterval="1"
         app:mrb_tickStart="5" />
 
-    <TextView
+    <androidx.appcompat.widget.AppCompatTextView
+        android:drawableEnd="@drawable/ic_arrow_drop_up_black_24dp"
+        android:drawablePadding="8dp"
         android:id="@+id/buttonFilter"
         android:layout_width="0dp"
         android:layout_height="48dp"
@@ -49,8 +51,8 @@
         android:fontFamily="@font/nunito_sans"
         android:gravity="center"
         android:text="Filter"
-        android:textColor="#424242"
-        android:textSize="16sp"
+        android:textColor="#212121"
+        android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -104,6 +106,7 @@
         app:layout_constraintTop_toTopOf="@+id/textView17" />
 
     <TextView
+        android:textColor="#424242"
         android:id="@+id/textView13"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -116,6 +119,7 @@
         app:layout_constraintTop_toBottomOf="@+id/price_rangebar" />
 
     <TextView
+        android:textColor="#424242"
         android:id="@+id/textView14"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -128,6 +132,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textView13" />
 
     <TextView
+        android:textColor="#424242"
         android:id="@+id/textView16"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -140,6 +145,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textView14" />
 
     <TextView
+        android:textColor="#424242"
         android:id="@+id/textView17"
         android:layout_width="wrap_content"
         android:layout_height="25dp"
@@ -153,7 +159,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView16" />
 
-    <android.support.constraint.Barrier
+    <androidx.constraintlayout.widget.Barrier
         android:id="@+id/barrier3"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
@@ -165,6 +171,7 @@
         tools:layout_editor_absoluteX="100dp" />
 
     <TextView
+        android:textColor="#424242"
         android:id="@+id/textView12"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -176,4 +183,4 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonFilter" />
 
-</android.support.constraint.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

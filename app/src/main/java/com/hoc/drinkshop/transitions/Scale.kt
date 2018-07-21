@@ -4,13 +4,13 @@ import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Context
-import android.support.transition.Transition
-import android.support.transition.TransitionListenerAdapter
-import android.support.transition.TransitionValues
-import android.support.transition.Visibility
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
+import androidx.transition.Transition
+import androidx.transition.TransitionListenerAdapter
+import androidx.transition.TransitionValues
+import androidx.transition.Visibility
 import com.hoc.drinkshop.R
 
 class Scale : Visibility {

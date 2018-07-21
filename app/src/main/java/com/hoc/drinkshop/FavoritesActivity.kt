@@ -1,16 +1,16 @@
 package com.hoc.drinkshop
 
 import android.os.Bundle
-import android.support.annotation.IdRes
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.recyclerview.extensions.ListAdapter
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.helper.ItemTouchHelper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.IdRes
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.hoc.drinkshop.DrinkActivity.Companion.DRINK
 import com.hoc.drinkshop.DrinkAdapter.Companion.decimalFormatPrice
 import com.hoc.drinkshop.DrinkAdapter.Companion.diffCallback
@@ -71,12 +71,7 @@ class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit)
             imageFav.setOnClickListener(this)
         }
 
-        override fun onClick(v: View) {
-            adapterPosition(this@FavoritesAdapter::getItem)
-                    ?.let { (pos, drink) ->
-                        onClickListener(drink, pos)
-                    }
-        }
+        override fun onClick(v: View) = adapterPosition { onClickListener(getItem(it), v.id) }.unit
 
         fun bind(drink: Drink) {
             textName.text = drink.name

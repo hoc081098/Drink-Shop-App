@@ -1,22 +1,14 @@
 package com.hoc.drinkshop
 
 import android.graphics.Canvas
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.helper.ItemTouchHelper
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 
 
 class ItemTouchHelperCallback(private val onSwiped: (RecyclerView.ViewHolder) -> Unit) : ItemTouchHelper.Callback() {
-    override fun onMove(recyclerView: RecyclerView?, viewHolder: RecyclerView.ViewHolder?, target: RecyclerView.ViewHolder?): Boolean {
-        return false
-    }
+    override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) = false
 
-    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-        if (direction == ItemTouchHelper.START || direction == ItemTouchHelper.END) {
-            onSwiped(viewHolder)
-        }
-    }
-
-    override fun getMovementFlags(recyclerView: RecyclerView?, viewHolder: RecyclerView.ViewHolder?): Int {
+    override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
         return when (viewHolder) {
             is FavoritesAdapter.ViewHolder -> {
                 makeFlag(ItemTouchHelper.ACTION_STATE_SWIPE, ItemTouchHelper.START or ItemTouchHelper.END)
@@ -28,7 +20,13 @@ class ItemTouchHelperCallback(private val onSwiped: (RecyclerView.ViewHolder) ->
         }
     }
 
-    override fun onChildDraw(c: Canvas?, recyclerView: RecyclerView?, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
+    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+        if (direction == ItemTouchHelper.START || direction == ItemTouchHelper.END) {
+            onSwiped(viewHolder)
+        }
+    }
+
+    override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
         when (viewHolder) {
             is FavoritesAdapter.ViewHolder -> getDefaultUIUtil().onDraw(c, recyclerView, viewHolder.swipableView, dX, dY, actionState, isCurrentlyActive)
             is CartAdapter.ViewHolder -> getDefaultUIUtil().onDraw(c, recyclerView, viewHolder.swipableView, dX, dY, actionState, isCurrentlyActive)
@@ -36,7 +34,7 @@ class ItemTouchHelperCallback(private val onSwiped: (RecyclerView.ViewHolder) ->
         }
     }
 
-    override fun onChildDrawOver(c: Canvas?, recyclerView: RecyclerView?, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
+    override fun onChildDrawOver(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
         when (viewHolder) {
             is FavoritesAdapter.ViewHolder -> getDefaultUIUtil().onDrawOver(c, recyclerView, viewHolder.swipableView, dX, dY, actionState, isCurrentlyActive)
             is CartAdapter.ViewHolder -> getDefaultUIUtil().onDrawOver(c, recyclerView, viewHolder.swipableView, dX, dY, actionState, isCurrentlyActive)
@@ -52,7 +50,7 @@ class ItemTouchHelperCallback(private val onSwiped: (RecyclerView.ViewHolder) ->
         }
     }
 
-    override fun clearView(recyclerView: RecyclerView?, viewHolder: RecyclerView.ViewHolder?) {
+    override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
         when (viewHolder) {
             is FavoritesAdapter.ViewHolder -> getDefaultUIUtil().clearView(viewHolder.swipableView)
             is CartAdapter.ViewHolder -> getDefaultUIUtil().clearView(viewHolder.swipableView)

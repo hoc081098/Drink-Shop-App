@@ -1,9 +1,9 @@
 package com.hoc.drinkshop
 
-import android.support.v7.recyclerview.extensions.ListAdapter
-import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.topping_item_layout.view.*
 
 class ToppingAdapter : ListAdapter<Drink, ToppingAdapter.ViewHolder>(DrinkAdapter.diffCallback) {

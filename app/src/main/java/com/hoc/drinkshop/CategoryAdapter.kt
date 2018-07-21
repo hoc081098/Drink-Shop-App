@@ -1,12 +1,12 @@
 package com.hoc.drinkshop
 
-import android.support.annotation.LayoutRes
-import android.support.v7.recyclerview.extensions.ListAdapter
-import android.support.v7.util.DiffUtil
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.LayoutRes
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.daimajia.slider.library.SliderTypes.BaseSliderView
 import com.daimajia.slider.library.SliderTypes.TextSliderView
 import com.squareup.picasso.Picasso
@@ -104,12 +104,12 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit)
 
         @JvmField
         val diffCallback = object : DiffUtil.ItemCallback<Any>() {
-            override fun areItemsTheSame(oldItem: Any?, newItem: Any?) = when {
+            override fun areItemsTheSame(oldItem: Any, newItem: Any) = when {
                 oldItem is Category && newItem is Category -> oldItem.id == newItem.id
                 else -> oldItem == newItem
             }
 
-            override fun areContentsTheSame(oldItem: Any?, newItem: Any?) = oldItem == newItem
+            override fun areContentsTheSame(oldItem: Any, newItem: Any) = oldItem == newItem
         }
     }
 }

@@ -1,10 +1,10 @@
 package com.hoc.drinkshop
 
-import android.support.v7.recyclerview.extensions.ListAdapter
-import android.support.v7.util.DiffUtil
-import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
@@ -89,8 +89,8 @@ class DrinkAdapter(
     companion object {
         @JvmField
         val diffCallback: DiffUtil.ItemCallback<Drink> = object : DiffUtil.ItemCallback<Drink>() {
-            override fun areItemsTheSame(oldItem: Drink?, newItem: Drink?) = oldItem?.id == newItem?.id
-            override fun areContentsTheSame(oldItem: Drink?, newItem: Drink?) = oldItem == newItem
+            override fun areItemsTheSame(oldItem: Drink, newItem: Drink) = oldItem.id == newItem.id
+            override fun areContentsTheSame(oldItem: Drink, newItem: Drink) = oldItem == newItem
         }
         @JvmField
         val decimalFormatPrice = DecimalFormat.getInstance()!!

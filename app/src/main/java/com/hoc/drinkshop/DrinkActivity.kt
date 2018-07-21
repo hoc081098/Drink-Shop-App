@@ -1,8 +1,8 @@
 package com.hoc.drinkshop
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.GridLayoutManager
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
@@ -19,7 +19,7 @@ import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.HttpException
 import retrofit2.Retrofit
-import android.support.v4.util.Pair as AndroidPair
+import androidx.core.util.Pair as AndroidPair
 
 class DrinkActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
     override val loggerTag: String = "MY_DRINK_TAG"

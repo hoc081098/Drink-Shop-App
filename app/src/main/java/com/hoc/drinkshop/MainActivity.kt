@@ -1,18 +1,19 @@
 package com.hoc.drinkshop
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.support.transition.Fade
-import android.support.transition.Slide
-import android.support.transition.TransitionManager
-import android.support.transition.TransitionSet
-import android.support.v4.view.animation.LinearOutSlowInInterpolator
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
 import android.view.Gravity
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.interpolator.view.animation.LinearOutSlowInInterpolator
+import androidx.transition.Fade
+import androidx.transition.Slide
+import androidx.transition.TransitionManager
+import androidx.transition.TransitionSet
 import com.facebook.accountkit.AccountKit
 import com.facebook.accountkit.AccountKitLoginResult
 import com.facebook.accountkit.ui.AccountKitActivity
@@ -125,6 +126,7 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
                         return@launch
                     }
 
+            @SuppressLint("InflateParams")
             val view = layoutInflater.inflate(R.layout.dialog_register, null)
             val editTextBirthday = view.editTextBirthday
             val editTextAddress = view.editTextAddress

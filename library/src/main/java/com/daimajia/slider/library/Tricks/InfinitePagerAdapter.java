@@ -1,12 +1,13 @@
 package com.daimajia.slider.library.Tricks;
 
 import android.os.Parcelable;
-import android.support.v4.view.PagerAdapter;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.daimajia.slider.library.SliderAdapter;
+
+import androidx.viewpager.widget.PagerAdapter;
 
 /**
  * A PagerAdapter that wraps around another PagerAdapter to handle paging wrap-around.

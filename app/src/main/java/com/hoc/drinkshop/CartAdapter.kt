@@ -1,11 +1,11 @@
 package com.hoc.drinkshop
 
-import android.support.v7.recyclerview.extensions.ListAdapter
-import android.support.v7.util.DiffUtil
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.cart_item_layout.view.*
 
@@ -26,7 +26,7 @@ class CartAdapter(private val onNumberChanged: (Cart, Int, Int) -> Unit)
         private val textSugarIce = itemView.textSugarIce
         private val textPrice = itemView.textPrice
         private val numberButton = itemView.numberButton.apply {
-            setOnValueChangeListener { view, _, newValue ->
+            setOnValueChangeListener { _, _, newValue ->
                 adapterPosition {
                     onNumberChanged(getItem(it), it, newValue)
                 }
@@ -50,15 +50,15 @@ class CartAdapter(private val onNumberChanged: (Cart, Int, Int) -> Unit)
 
     companion object {
         val cartDiffCallback = object : DiffUtil.ItemCallback<Cart>() {
-            override fun areItemsTheSame(oldItem: Cart?, newItem: Cart?) = oldItem?.id == newItem?.id
-            override fun areContentsTheSame(oldItem: Cart?, newItem: Cart?) = oldItem == newItem
+            override fun areItemsTheSame(oldItem: Cart, newItem: Cart) = oldItem.id == newItem.id
+            override fun areContentsTheSame(oldItem: Cart, newItem: Cart) = oldItem == newItem
         }
     }
 }
 
 inline fun <T> RecyclerView.ViewHolder.adapterPosition(crossinline f: (Int) -> T): Pair<Int, T>? {
     return adapterPosition.takeIf {
-        it != RecyclerView.NO_POSITION
+        it != androidx.recyclerview.widget.RecyclerView.NO_POSITION
     }?.let {
         it to f(it)
     }

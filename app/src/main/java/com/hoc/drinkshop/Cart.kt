@@ -1,7 +1,7 @@
 package com.hoc.drinkshop
 
 import android.app.Application
-import android.arch.persistence.room.*
+import androidx.room.*
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import org.koin.dsl.module.module

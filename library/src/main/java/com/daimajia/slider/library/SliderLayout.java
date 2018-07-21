@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Message;
-import android.support.v4.view.PagerAdapter;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -40,6 +39,8 @@ import com.daimajia.slider.library.Tricks.ViewPagerEx;
 import java.lang.reflect.Field;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import androidx.viewpager.widget.PagerAdapter;
 
 /**
  * SliderLayout is compound layout. This is combined with {@link com.daimajia.slider.library.Indicators.PagerIndicator}
