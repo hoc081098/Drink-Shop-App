@@ -21,7 +21,7 @@ import retrofit2.HttpException
 import retrofit2.Retrofit
 import android.support.v4.util.Pair as AndroidPair
 
-class DrinkActivity : AppCompatActivity(), AnkoLogger {
+class DrinkActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
     override val loggerTag: String = "MY_DRINK_TAG"
 
     private lateinit var drinkAdapter: DrinkAdapter
@@ -44,41 +44,40 @@ class DrinkActivity : AppCompatActivity(), AnkoLogger {
 
         collapsingLayout.title = category.name.toUpperCase()
 
-        drinkAdapter = DrinkAdapter(::onButtonAddToCartClick, user.phone)
-                .apply {
-                    clickObservable
-                            .subscribeOn(AndroidSchedulers.mainThread())
-                            .concatMap { (drink, adapterPosition) ->
-                                info("concatMap => $drink\n$adapterPosition")
-                                when {
-                                    user.phone in drink.stars -> apiService.unstar(user.phone, drink.id)
-                                    else -> apiService.star(user.phone, drink.id)
-                                }.map { it to adapterPosition }.subscribeOn(Schedulers.io())
-                            }
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribeBy(onNext = { (drink, adapterPosition) ->
-                                info("onNext => $drink\n$adapterPosition")
-
-                                drinks[adapterPosition] = drink
-                                drinkAdapter.notifyItemChanged(adapterPosition)
-
-                                when {
-                                    user.phone in drink.stars -> "Added to favorite successfully"
-                                    else -> "Removed from favorite successfully"
-                                }.let(::toast)
-                            }, onError = {
-                                info(it.message, it)
-
-                                when (it) {
-                                    is HttpException -> it.response().errorBody()?.let {
-                                        retrofit.parseResultErrorMessage(it)
-                                                .let(::toast)
-                                    }
-                                    else -> toast(it.message ?: "An error occurred")
-                                }
-                            })
-                            .addTo(compositeDisposable)
+        drinkAdapter = DrinkAdapter(this, user.phone)
+        drinkAdapter.clickObservable
+                .concatMap { (adapterPosition, drink) ->
+                    info("concatMap => $drink, $adapterPosition")
+                    val task = when {
+                        user.phone in drink.stars -> apiService.unstar(user.phone, drink.id)
+                        else -> apiService.star(user.phone, drink.id)
+                    }
+                    task.map { it to adapterPosition }
+                            .subscribeOn(Schedulers.io())
                 }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                        onNext = { (drink, adapterPosition) ->
+                            info("onNext => $drink, $adapterPosition")
+
+                            drinks[adapterPosition] = drink
+                            drinkAdapter.notifyItemChanged(adapterPosition)
+
+                            when {
+                                user.phone in drink.stars -> "Added to favorite successfully"
+                                else -> "Removed from favorite successfully"
+                            }.let(::toast)
+                        },
+                        onError = {
+                            when (it) {
+                                is HttpException -> it.response()
+                                        .errorBody()
+                                        ?.let(retrofit::parseResultErrorMessage)
+                                else -> it.message
+                            }.let { it ?: "An error occurred" }.let(::toast)
+                        }
+                )
+                .addTo(compositeDisposable)
 
         recyclerDrink.run {
             setHasFixedSize(true)
@@ -95,6 +94,8 @@ class DrinkActivity : AppCompatActivity(), AnkoLogger {
         parentJob.cancel()
         compositeDisposable.clear()
     }
+
+    override fun invoke(drink: Drink) = startActivity<AddToCartActivity>(DRINK to drink)
 
     private fun getDrinks() {
         launch(UI, parent = parentJob) {
@@ -115,9 +116,6 @@ class DrinkActivity : AppCompatActivity(), AnkoLogger {
             swipeLayout.post { swipeLayout.isRefreshing = false }
         }
     }
-
-    private fun onButtonAddToCartClick(drink: Drink) =
-            startActivity<AddToCartActivity>(DRINK to drink)
 
     companion object {
         const val DRINK = "drink"

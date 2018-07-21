@@ -14,20 +14,30 @@ class ToppingAdapter : ListAdapter<Drink, ToppingAdapter.ViewHolder>(DrinkAdapte
             ViewHolder(parent inflate R.layout.topping_item_layout)
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        getItem(position)?.let(holder::bind)
+        holder.bind = true
+        holder.bind(getItem(position))
+        holder.bind = false
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val toppingCheckBox = itemView.toppingCheckBox!!
+        var bind = false
+
+        val toppingCheckBox = itemView.toppingCheckBox!!.apply {
+            setOnCheckedChangeListener { _, isChecked ->
+                if (bind) return@setOnCheckedChangeListener
+
+                adapterPosition {
+                    val drink = getItem(it)
+                    if (isChecked) mutableCheckedTopping += drink
+                    else mutableCheckedTopping -= drink
+                    notifyItemChanged(it)
+                }
+            }
+        }
+
         fun bind(drink: Drink) = toppingCheckBox.run {
             text = drink.name
-            isChecked = mutableCheckedTopping.contains(drink)
-
-            setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) mutableCheckedTopping += drink
-                else mutableCheckedTopping -= drink
-                notifyItemChanged(adapterPosition)
-            }
+            isChecked = drink in mutableCheckedTopping
         }
     }
 }

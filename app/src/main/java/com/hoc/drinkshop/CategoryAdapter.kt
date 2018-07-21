@@ -12,12 +12,12 @@ import com.daimajia.slider.library.SliderTypes.TextSliderView
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.category_item_layout.view.*
 import kotlinx.android.synthetic.main.slider_item_layout.view.*
-import kotlinx.android.synthetic.main.text_item_layout.view.*
 
 infix fun ViewGroup.inflate(@LayoutRes layoutId: Int): View =
         LayoutInflater.from(context).inflate(layoutId, this, false)
 
-class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAdapter<Any, RecyclerView.ViewHolder>(diffCallback) {
+class CategoryAdapter(private val onClickListener: (Category) -> Unit)
+    : ListAdapter<Any, RecyclerView.ViewHolder>(diffCallback) {
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
 
@@ -27,7 +27,7 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAda
             }
             is TextViewHolder -> Unit
             is CategoryViewHolder -> {
-                holder.bind(item as? Category, onClickListener)
+                holder.bind(item as? Category)
             }
             else -> throw IllegalStateException("Uknown view holder!")
         }
@@ -50,14 +50,25 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAda
         }
     }
 
-    fun submitList(list: List<Any>, slideList: List<Banner>) {
-        val mutableList = mutableListOf(slideList, Any())
+    fun submitList(list: List<Category>, slideList: List<Banner>) {
+        val mutableList = mutableListOf(slideList, 0)
                 .apply { addAll(list) }
         super.submitList(mutableList)
     }
 
-    class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        fun bind(item: Category?, onClickListener: (Category) -> Unit) = item?.let { category ->
+    inner class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val imageCategory = itemView.imageCategory!!
+        private val textCategoryName = itemView.textCategoryName!!
+
+        init {
+            itemView.setOnClickListener {
+                adapterPosition {
+                    onClickListener(getItem(it) as Category)
+                }
+            }
+        }
+
+        fun bind(item: Category?) = item?.let { category ->
             Picasso.get()
                     .load(category.imageUrl)
                     .fit()
@@ -65,11 +76,7 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAda
                     .placeholder(R.drawable.ic_image_black_24dp)
                     .into(imageCategory)
             textCategoryName.text = category.name
-            itemView.setOnClickListener { onClickListener(category) }
         }
-
-        private val imageCategory = itemView.imageCategory!!
-        private val textCategoryName = itemView.textCategoryName!!
     }
 
     class SlideViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -88,9 +95,7 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAda
         val sliderLayout = itemView.sliderLayout
     }
 
-    class TextViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val textViewPopular = itemView.textViewPopular
-    }
+    class TextViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
     companion object {
         const val TYPE_SLIDER = 0

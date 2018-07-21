@@ -46,7 +46,8 @@ class CartsActivity : AppCompatActivity() {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@CartsActivity)
             adapter = cartAdapter
-            ItemTouchHelper(ItemTouchHelperCallback(::onSwiped)).attachToRecyclerView(this)
+            ItemTouchHelperCallback(::onSwiped).let(::ItemTouchHelper)
+                    .attachToRecyclerView(this)
         }
 
         subscribe()

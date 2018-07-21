@@ -60,23 +60,22 @@ fun Bitmap.getResizedBitmap(newWidth: Int, newHeight: Int, isNecessaryToKeepOrig
     return resizedBitmap
 }
 
-class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, AnkoLogger {
+class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, AnkoLogger, (Category) -> Unit {
     override val loggerTag: String = "MY_TAG_HOME"
 
     private val apiService by inject<ApiService>()
     private val retrofit by inject<Retrofit>()
     private val cartDataSource by inject<CartDataSource>()
     private val parentJob = Job()
-    private val categoryAdapter = CategoryAdapter(::navigateToDrinkActivity)
+    private val categoryAdapter = CategoryAdapter(this)
     private var doubleBackToExist = false
     private lateinit var user: User
     private lateinit var headerView: View
     private var badge: NotificationBadge? = null
     private val compositeDisposable = CompositeDisposable()
 
-    private fun navigateToDrinkActivity(category: Category) {
-        startActivity<DrinkActivity>(CATEGORY to category, MainActivity.USER to user)
-    }
+    override fun invoke(category: Category) =
+            startActivity<DrinkActivity>(CATEGORY to category, USER to user)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -32,7 +32,7 @@ import retrofit2.Retrofit
 import kotlin.math.ceil
 import kotlin.math.floor
 
-class SearchActivity : AppCompatActivity(), AnkoLogger {
+class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
     override val loggerTag = "MY_SEARCH_TAG"
 
     private lateinit var searchAdapter: DrinkAdapter
@@ -89,7 +89,7 @@ class SearchActivity : AppCompatActivity(), AnkoLogger {
 
         launch(UI) {
             TransitionManager.beginDelayedTransition(content_layout, Fade())
-            textViewEmpty.visibility = View.GONE
+            textViewEmpty.visibility = View.INVISIBLE
             recyclerSearch.visibility = View.INVISIBLE
             progressBar.visibility = View.VISIBLE
 
@@ -109,10 +109,10 @@ class SearchActivity : AppCompatActivity(), AnkoLogger {
                         drinks = it.toMutableList()
 
                         TransitionManager.beginDelayedTransition(content_layout, Fade())
-                        progressBar.visibility = View.GONE
+                        progressBar.visibility = View.INVISIBLE
                         if (drinks.isNotEmpty()) {
                             recyclerSearch.visibility = View.VISIBLE
-                            textViewEmpty.visibility = View.GONE
+                            textViewEmpty.visibility = View.INVISIBLE
 
                             searchAdapter.submitList(drinks)
                             toast("Found ${it.size} drinks")
@@ -124,19 +124,18 @@ class SearchActivity : AppCompatActivity(), AnkoLogger {
         }
     }
 
-
-    private fun onButtonAddToCartClick(drink: Drink) =
-            startActivity<AddToCartActivity>(DrinkActivity.DRINK to drink)
+    override fun invoke(drink: Drink) = startActivity<AddToCartActivity>(DrinkActivity.DRINK to drink)
 
     private fun setupSearchAdapter() {
-        searchAdapter = DrinkAdapter(::onButtonAddToCartClick, user.phone)
+        searchAdapter = DrinkAdapter(this, user.phone)
         searchAdapter.clickObservable
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .concatMap { (drink, adapterPosition) ->
-                    when {
+                .concatMap { (pos, drink) ->
+                    val task = when {
                         user.phone in drink.stars -> apiService.unstar(user.phone, drink.id)
                         else -> apiService.star(user.phone, drink.id)
-                    }.map { it to adapterPosition }.subscribeOn(Schedulers.io())
+                    }
+                    task.map { it to pos }
+                            .subscribeOn(Schedulers.io())
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
@@ -150,15 +149,12 @@ class SearchActivity : AppCompatActivity(), AnkoLogger {
                             }.let(::toast)
                         },
                         onError = {
-                            info(it.message, it)
-
                             when (it) {
-                                is HttpException -> it.response().errorBody()?.let {
-                                    retrofit.parseResultErrorMessage(it)
-                                            .let(::toast)
-                                }
-                                else -> toast(it.message ?: "An error occurred")
-                            }
+                                is HttpException -> it.response()
+                                        .errorBody()
+                                        ?.let(retrofit::parseResultErrorMessage)
+                                else -> it.message
+                            }.let { it ?: "An error occurred" }.let(::toast)
                         }
                 )
                 .addTo(compositeDisposable)

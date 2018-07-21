@@ -48,19 +48,17 @@ fun MaterialSearchView.textChange(): Flowable<String> {
                     true
                 } == true
     })
-    return processor.onBackpressureLatest()
+    return processor.onBackpressureLatest().hide()
 }
 
-class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit) : ListAdapter<Drink, FavoritesAdapter.ViewHolder>(diffCallback) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(parent inflate R.layout.fav_item_layout)
-    }
+class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit)
+    : ListAdapter<Drink, FavoritesAdapter.ViewHolder>(diffCallback) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
+            ViewHolder(parent inflate R.layout.fav_item_layout)
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClickListener)
-    }
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) = holder.bind(getItem(position))
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
         private val textName = itemView.textName
         private val imageView = itemView.imageView
         private val cardView = itemView.cardView
@@ -68,7 +66,19 @@ class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit) : List
         private val imageFav = itemView.imageFav
         val swipableView = itemView.foreground_layout!!
 
-        fun bind(item: Drink?, onClickListener: (Drink, Int) -> Unit) = item?.let { drink ->
+        init {
+            cardView.setOnClickListener(this)
+            imageFav.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View) {
+            adapterPosition(this@FavoritesAdapter::getItem)
+                    ?.let { (pos, drink) ->
+                        onClickListener(drink, pos)
+                    }
+        }
+
+        fun bind(drink: Drink) {
             textName.text = drink.name
             textPrice.text = itemView.context.getString(R.string.price, decimalFormatPrice.format(drink.price))
             Picasso.get()
@@ -77,11 +87,6 @@ class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit) : List
                     .placeholder(R.drawable.ic_image_black_24dp)
                     .error(R.drawable.ic_image_black_24dp)
                     .into(imageView)
-
-            val listener = View.OnClickListener { onClickListener(drink, it.id) }
-            cardView.setOnClickListener(listener)
-            imageFav.setOnClickListener(listener)
-
             imageFav.setImageResource(R.drawable.ic_favorite_black_24dp)
         }
     }
