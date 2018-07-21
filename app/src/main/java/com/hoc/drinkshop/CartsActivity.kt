@@ -2,35 +2,45 @@ package com.hoc.drinkshop
 
 import android.os.Bundle
 import android.support.design.widget.Snackbar
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.recyclerview.extensions.ListAdapter
-import android.support.v7.util.DiffUtil
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.helper.ItemTouchHelper
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import com.squareup.picasso.Picasso
+import com.hoc.drinkshop.DrinkAdapter.Companion.decimalFormatPrice
+import com.hoc.drinkshop.MainActivity.Companion.USER
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_carts.*
-import kotlinx.android.synthetic.main.cart_item_layout.view.*
+import kotlinx.android.synthetic.main.submit_order_layout.view.*
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.launch
 import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
+import retrofit2.HttpException
+import retrofit2.Retrofit
 
 class CartsActivity : AppCompatActivity() {
     private val cartDataSource by inject<CartDataSource>()
+    private val apiService by inject<ApiService>()
+    private val retrofit by inject<Retrofit>()
+
     private val cartAdapter = CartAdapter(::onNumberChanged)
     private var carts = mutableListOf<Cart>()
+    private var totalPrice = 0.0
     private val compositeDisposable = CompositeDisposable()
+    private val parentJob = Job()
+    private lateinit var user: User
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_carts)
+
+        user = intent.getParcelableExtra<User>(USER)
 
         recycler_carts.run {
             setHasFixedSize(true)
@@ -39,7 +49,98 @@ class CartsActivity : AppCompatActivity() {
             ItemTouchHelper(ItemTouchHelperCallback(::onSwiped)).attachToRecyclerView(this)
         }
 
+        subscribe()
+
+        buttonPlaceOrder.setOnClickListener { submitOrder() }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        subscribe()
+    }
+
+    private fun subscribe() {
         getCarts()
+
+        cartDataSource.getCountCart()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                        onError = { toast(it.message ?: "Uknown error occurred") },
+                        onNext = {
+                            badge.setNumber(it)
+                            buttonPlaceOrder.isEnabled = it > 0
+                            buttonPlaceOrder.isClickable = it > 0
+                            buttonPlaceOrder.translationZ = if (it > 0) 4f else 0f
+                        }
+                )
+                .addTo(compositeDisposable)
+        cartDataSource.getSumPrice()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                        onError = { toast(it.message ?: "Uknown error occurred") },
+                        onNext = {
+                            val price = it.firstOrNull() ?: 0.0
+                            textTotalPrice.text = "Total $${decimalFormatPrice.format(price)}"
+                            totalPrice = price
+                        }
+                )
+    }
+
+    private fun submitOrder() {
+        val view = layoutInflater.inflate(R.layout.submit_order_layout, null)
+        val editTextOtherAddress = view.editTextOtherAddress
+        view.radioGroup.setOnCheckedChangeListener { _, checkedId ->
+            editTextOtherAddress.isEnabled = checkedId == R.id.radioOtherAdd
+        }
+
+        AlertDialog.Builder(this)
+                .setTitle("Submit order")
+                .setView(view)
+                .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                .setPositiveButton("Ok") { dialog, _ ->
+                    dialog.dismiss()
+
+                    val address = if (editTextOtherAddress.isEnabled) {
+                        editTextOtherAddress.text.toString()
+                    } else {
+                        user.address
+                    }
+                    if (address.isBlank()) {
+                        toast("Please input address")
+                        return@setPositiveButton
+                    }
+                    val comment = view.editTextComment.text.toString()
+
+                    launch(UI, parent = parentJob) {
+                        Order(
+                                detail = carts,
+                                price = totalPrice,
+                                phone = user.phone,
+                                address = address,
+                                comment = comment
+                        ).let(apiService::submitOrder)
+                                .subscribeOn(Schedulers.io())
+                                .flatMapCompletable {
+                                    cartDataSource.deleteAllCart().subscribeOn(Schedulers.io())
+                                }
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribeBy(
+                                        onError = {
+                                            when (it) {
+                                                is HttpException -> it.response()
+                                                        .errorBody()
+                                                        ?.let(retrofit::parseResultErrorMessage)
+                                                else -> it.message
+                                            }.let { it ?: "An error occurred" }.let(::toast)
+                                        },
+                                        onComplete = { toast("Submit order successfully") }
+                                )
+                    }
+                }
+                .create()
+                .show()
     }
 
     private fun onSwiped(viewHolder: RecyclerView.ViewHolder) {
@@ -84,9 +185,14 @@ class CartsActivity : AppCompatActivity() {
                 .addTo(compositeDisposable)
     }
 
+    override fun onStop() {
+        super.onStop()
+        compositeDisposable.clear()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        compositeDisposable.clear()
+        parentJob.cancel()
     }
 
     private fun getCarts() {
@@ -122,48 +228,4 @@ class CartsActivity : AppCompatActivity() {
     }
 }
 
-class CartAdapter(private val onNumberChanged: (Cart, Int, Int) -> Unit) : ListAdapter<Cart, CartAdapter.ViewHolder>(cartDiffCallback) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return LayoutInflater.from(parent.context)
-                .inflate(R.layout.cart_item_layout, parent, false)
-                .let(::ViewHolder)
-    }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) =
-            holder.bind(getItem(position), onNumberChanged)
-
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val imageCartItem = itemView.imageCartItem
-        private val textCartTitle = itemView.textCartTitle
-        private val textSugarIce = itemView.textSugarIce
-        private val textPrice = itemView.textPrice
-        private val numberButton = itemView.numberButton
-        val swipableView = itemView.foreground_layout
-
-        fun bind(item: Cart?, onNumberChanged: (Cart, Int, Int) -> Unit) {
-            item?.let { cart ->
-                Picasso.get()
-                        .load(cart.imageUrl)
-                        .fit()
-                        .error(R.drawable.ic_image_black_24dp)
-                        .placeholder(R.drawable.ic_image_black_24dp)
-                        .into(imageCartItem)
-                textCartTitle.text = "${cart.name} x${cart.number} size ${cart.cupSize}"
-                textSugarIce.text = "Sugar: ${cart.sugar}%, ice: ${cart.ice}%"
-                textPrice.text = itemView.context.getString(R.string.price, DrinkAdapter.decimalFormatPrice.format(cart.price))
-
-                numberButton.number = cart.number.toString()
-                numberButton.setOnValueChangeListener { view, oldValue, newValue ->
-                    onNumberChanged(cart, adapterPosition, newValue)
-                }
-            }
-        }
-    }
-
-    companion object {
-        val cartDiffCallback = object : DiffUtil.ItemCallback<Cart>() {
-            override fun areItemsTheSame(oldItem: Cart?, newItem: Cart?) = oldItem?.id == newItem?.id
-            override fun areContentsTheSame(oldItem: Cart?, newItem: Cart?) = oldItem == newItem
-        }
-    }
-}

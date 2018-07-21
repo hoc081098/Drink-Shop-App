@@ -18,12 +18,12 @@ import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import com.daimajia.slider.library.SliderTypes.BaseSliderView
-import com.daimajia.slider.library.SliderTypes.TextSliderView
 import com.facebook.accountkit.AccountKit
+import com.hoc.drinkshop.CategoryAdapter.Companion.TYPE_CATEGORY
+import com.hoc.drinkshop.CategoryAdapter.Companion.TYPE_SLIDER
+import com.hoc.drinkshop.CategoryAdapter.Companion.TYPE_TEXT
 import com.hoc.drinkshop.MainActivity.Companion.USER
 import com.nex3z.notificationbadge.NotificationBadge
-import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
@@ -48,7 +48,6 @@ import org.jetbrains.anko.*
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
 import java.io.ByteArrayOutputStream
-import java.lang.Exception
 
 fun Bitmap.getResizedBitmap(newWidth: Int, newHeight: Int, isNecessaryToKeepOrig: Boolean): Bitmap {
     val matrix = Matrix().apply {
@@ -99,6 +98,16 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         recyclerCategory.run {
             layoutManager = GridLayoutManager(this@HomeActivity, 2)
+                    .apply {
+                        spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                            override fun getSpanSize(position: Int) = when (categoryAdapter.getItemViewType(position)) {
+                                TYPE_SLIDER -> 2
+                                TYPE_TEXT -> 2
+                                TYPE_CATEGORY -> 1
+                                else -> throw IllegalStateException("Unknown view type!")
+                            }
+                        }
+                    }
             setHasFixedSize(true)
             adapter = categoryAdapter
         }
@@ -114,26 +123,19 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         launch(UI, parent = parentJob) {
             try {
+
                 val banners = getBanners.await()
                 val categories = getAllCategories.await()
                 val user = getUser.await()
 
                 swipeLayout.post { swipeLayout.isRefreshing = false }
-                //update slider layout
-                sliderLayout.removeAllSliders()
-                banners.forEach { (_, name, imageUrl) ->
-                    TextSliderView(this@HomeActivity)
-                            .description(name)
-                            .image(imageUrl)
-                            .setScaleType(BaseSliderView.ScaleType.Fit)
-                            .let(sliderLayout::addSlider)
-                }
 
                 //update recycler categories
-                categoryAdapter.submitList(categories)
+                categoryAdapter.submitList(categories, banners)
 
                 //update navigation view
                 bindHeaderView(user.also { this@HomeActivity.user = it })
+
             } catch (exception: Throwable) {
 
             }
@@ -156,13 +158,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     .centerCrop()
                     .placeholder(R.drawable.ic_account_circle_black_24dp)
                     .error(R.drawable.ic_account_circle_black_24dp)
-                    .into(imageViewAvatar, object : Callback {
-                        override fun onSuccess() {}
-
-                        override fun onError(e: Exception) {
-                            toast("Load avatar failed: ${e.message}")
-                        }
-                    })
+                    .into(imageViewAvatar)
         }
     }
 
@@ -225,7 +221,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onStart() {
         super.onStart()
-        sliderLayout.startAutoCycle()
+        val slideViewHolder = recyclerCategory.findViewHolderForAdapterPosition(0) as? CategoryAdapter.SlideViewHolder
+        (slideViewHolder
+                ?: return)
+                .sliderLayout
+                .startAutoCycle()
     }
 
     override fun onResume() {
@@ -250,7 +250,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onStop() {
         super.onStop()
-        sliderLayout.stopAutoCycle()
+        val slideViewHolder = recyclerCategory.findViewHolderForAdapterPosition(0) as? CategoryAdapter.SlideViewHolder
+        (slideViewHolder
+                ?: return)
+                .sliderLayout
+                .stopAutoCycle()
     }
 
     override fun onDestroy() {
@@ -276,7 +280,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         menu.findItem(R.id.action_cart).actionView.run {
             this@HomeActivity.badge = badge
             setOnClickListener {
-                startActivity<CartsActivity>()
+                startActivity<CartsActivity>(USER to user)
             }
         }
 

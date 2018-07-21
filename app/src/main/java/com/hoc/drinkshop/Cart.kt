@@ -32,6 +32,9 @@ interface CartDao {
     @Query("SELECT COUNT(*) FROM carts")
     fun getCountCart(): Flowable<Int>
 
+    @Query("SELECT SUM(price) FROM carts")
+    fun getSumPrice(): Flowable<List<Double>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertCart(vararg cart: Cart)
 
@@ -61,6 +64,8 @@ interface CartDataSource {
 
     fun getCountCart(): Flowable<Int>
 
+    fun getSumPrice(): Flowable<List<Double>>
+
     fun insertCart(vararg cart: Cart): Completable
 
     fun deleteCart(vararg cart: Cart): Completable
@@ -71,6 +76,8 @@ interface CartDataSource {
 }
 
 class CartRepository(private val dao: CartDao) : CartDataSource {
+    override fun getSumPrice(): Flowable<List<Double>> = dao.getSumPrice()
+
     override fun getAllCart(): Flowable<List<Cart>> = dao.getAllCart()
 
     override fun getCartById(id: Int): Flowable<Cart> = dao.getCartById(id)

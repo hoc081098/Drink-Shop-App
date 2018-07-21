@@ -3,12 +3,9 @@ package com.hoc.drinkshop
 import android.os.Bundle
 import android.support.design.widget.BottomSheetBehavior
 import android.support.transition.Fade
-import android.support.transition.Slide
 import android.support.transition.TransitionManager
-import android.support.transition.TransitionSet
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -91,13 +88,10 @@ class SearchActivity : AppCompatActivity(), AnkoLogger {
                 " sortName=[$sortName], limit=[$limit], minPrice=[$minPrice], maxPrice=[$maxPrice]")
 
         launch(UI) {
-            TransitionSet()
-                    .addTransition(Fade())
-                    .addTransition(Slide(Gravity.END))
-                    .let { TransitionManager.beginDelayedTransition(content_layout, it) }
-            progressBar.visibility = View.VISIBLE
+            TransitionManager.beginDelayedTransition(content_layout, Fade())
             textViewEmpty.visibility = View.GONE
             recyclerSearch.visibility = View.INVISIBLE
+            progressBar.visibility = View.VISIBLE
 
             apiService.getDrinks(
                     name = query,
@@ -114,11 +108,7 @@ class SearchActivity : AppCompatActivity(), AnkoLogger {
                     .onSuccess {
                         drinks = it.toMutableList()
 
-                        TransitionSet()
-                                .addTransition(Fade())
-                                .addTransition(Slide(Gravity.END))
-                                .let { TransitionManager.beginDelayedTransition(content_layout, it) }
-
+                        TransitionManager.beginDelayedTransition(content_layout, Fade())
                         progressBar.visibility = View.GONE
                         if (drinks.isNotEmpty()) {
                             recyclerSearch.visibility = View.VISIBLE

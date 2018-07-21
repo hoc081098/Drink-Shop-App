@@ -1,16 +1,10 @@
 package com.hoc.drinkshop
 
 import android.os.Bundle
-import android.support.v4.view.ViewCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.recyclerview.extensions.ListAdapter
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
-import com.hoc.drinkshop.DrinkAdapter.Companion.diffCallback
 import com.squareup.picasso.Picasso
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -19,34 +13,13 @@ import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_add_to_cart.*
 import kotlinx.android.synthetic.main.dialog_confirm.view.*
-import kotlinx.android.synthetic.main.topping_item_layout.view.*
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
-
-class ToppingAdapter(private val onClickListener: (Drink, Boolean) -> Unit)
-    : ListAdapter<Drink, ToppingAdapter.ViewHolder>(diffCallback) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-            ViewHolder(parent inflate R.layout.topping_item_layout)
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClickListener)
-    }
-
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val toppingCheckBox = itemView.toppingCheckBox!!
-        fun bind(item: Drink?, onClickListener: (Drink, Boolean) -> Unit) = item?.name?.let { s ->
-            toppingCheckBox.text = s
-            toppingCheckBox.setOnCheckedChangeListener { _, isChecked -> onClickListener(item, isChecked) }
-        }
-    }
-}
 
 class AddToCartActivity : AppCompatActivity(), AnkoLogger {
     override val loggerTag: String = "MY_ADD_TO_CART_TAG"
@@ -58,9 +31,7 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
     private val cartDataSource by inject<CartDataSource>()
 
     private lateinit var drink: Drink
-    private val checkedTopping = mutableListOf<Drink>()
-    private val toppingAdapter = ToppingAdapter(::onItemCheck)
-
+    private val toppingAdapter = ToppingAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,10 +49,10 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
                 .into(imageView2)
 
         recyclerTopping.run {
-            setHasFixedSize(false)
+            setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@AddToCartActivity)
             adapter = toppingAdapter
-            ViewCompat.setNestedScrollingEnabled(this, false)
+            //ViewCompat.setNestedScrollingEnabled(this, false)
         }
 
         getTopping()
@@ -106,62 +77,57 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
     }
 
     private fun showConfirmDialog(number: Int, comment: String, cupSize: String, sugar: Int, ice: Int) {
-        doAsync {
-            val title = "${drink.name} x$number size $cupSize"
-            val totalPrice = number * (drink.price + checkedTopping.sumByDouble { it.price }
-                    + if (cupSize == "L") 3 else 0)
-            val toppingExtras = checkedTopping.joinToString("\n") { it.name }
-            onComplete {
-                val view = it?.let {
-                    it.layoutInflater?.inflate(R.layout.dialog_confirm, null)?.apply {
-                        textTitle.text = title
-                        textPrice.text = "$$totalPrice"
-                        textSugar.text = "Sugar: $sugar%"
-                        textIce.text = "Ice: $ice%"
-                        textToppingExtras.text = toppingExtras
-                        Picasso.get()
-                                .load(drink.imageUrl)
-                                .fit()
-                                .error(R.drawable.ic_image_black_24dp)
-                                .placeholder(R.drawable.ic_image_black_24dp)
-                                .into(imageConfirm)
-                    }
-                } ?: return@onComplete
+        val title = "${drink.name} x$number size $cupSize"
+        val checkedTopping = toppingAdapter.checkedTopping
+        val totalPrice = number * (drink.price + checkedTopping.sumByDouble { it.price } + if (cupSize == "L") 3 else 0)
+        val toppingExtras = checkedTopping.joinToString("\n") { it.name }
 
-                AlertDialog.Builder(it)
-                        .setView(view)
-                        .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-                        .setPositiveButton("Confirm") { dialog, _ ->
-                            dialog.dismiss()
+        val view = layoutInflater.inflate(R.layout.dialog_confirm, null).also {
+            it.textTitle.text = title
+            it.textPrice.text = "$$totalPrice"
+            it.textSugar.text = "Sugar: $sugar%"
+            it.textIce.text = "Ice: $ice%"
+            it.textToppingExtras.text = toppingExtras
+            Picasso.get()
+                    .load(drink.imageUrl)
+                    .fit()
+                    .error(R.drawable.ic_image_black_24dp)
+                    .placeholder(R.drawable.ic_image_black_24dp)
+                    .into(it.imageConfirm)
+        }
 
-                            val cart = Cart(
-                                    drink.name,
-                                    drink.id,
-                                    drink.imageUrl,
-                                    number,
-                                    comment,
-                                    cupSize,
-                                    sugar,
-                                    ice,
-                                    totalPrice
+        AlertDialog.Builder(this)
+                .setView(view)
+                .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                .setPositiveButton("Confirm") { dialog, _ ->
+                    dialog.dismiss()
+
+                    val cart = Cart(
+                            drink.name,
+                            drink.id,
+                            drink.imageUrl,
+                            number,
+                            comment,
+                            cupSize,
+                            sugar,
+                            ice,
+                            totalPrice
+                    )
+
+                    compositeDisposable += cartDataSource.insertCart(cart)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribeBy(
+                                    onError = {
+                                        toast("Cannot add to cart because ${it.message
+                                                ?: "unknown error"}")
+                                    },
+                                    onComplete = { toast("Add to cart success") }
                             )
 
-                            compositeDisposable += cartDataSource.insertCart(cart)
-                                    .subscribeOn(Schedulers.io())
-                                    .observeOn(AndroidSchedulers.mainThread())
-                                    .subscribeBy(
-                                            onError = {
-                                                toast("Cannot add to cart because ${it.message
-                                                        ?: "unknown error"}")
-                                            },
-                                            onComplete = { toast("Add to cart success") }
-                                    )
-
-                        }
-                        .create()
-                        .show()
-            }
-        }
+                }
+                .create()
+                .show()
     }
 
     private fun getIce(checkedRadioButtonId: Int): Int = when (checkedRadioButtonId) {
@@ -195,12 +161,6 @@ class AddToCartActivity : AppCompatActivity(), AnkoLogger {
                         toast("Cannot get topping because ${retrofit.parseResultErrorMessage(it.first)}")
                     }
         }
-    }
-
-
-    private fun onItemCheck(s: Drink, isChecked: Boolean) {
-        if (isChecked) checkedTopping += s
-        else checkedTopping -= s
     }
 
     override fun onDestroy() {

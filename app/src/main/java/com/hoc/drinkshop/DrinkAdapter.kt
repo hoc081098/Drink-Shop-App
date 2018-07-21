@@ -25,14 +25,14 @@ class DrinkAdapter(
     val clickObservable: Observable<Type> = subject
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(parent inflate R.layout.drink_item_layout, parent)
+        return ViewHolder(parent inflate R.layout.drink_item_layout)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    inner class ViewHolder(itemView: View, private val parent: ViewGroup) : RecyclerView.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textDrinkName = itemView.textDrinkName!!
         private val imageDrink = itemView.imageDrink!!
         private val imageAddToCart = itemView.imageAddToCart!!
@@ -66,11 +66,16 @@ class DrinkAdapter(
             }.let(imageFav::setImageResource)
 
             buttonFav.clicks()
-                    .takeUntil(parent.detaches())
+                    .takeUntil(itemView.detaches())
                     .throttleFirst(400, TimeUnit.MILLISECONDS)
                     .map { item to adapterPosition }
                     .subscribe(subject)
         }
+
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        subject.onComplete()
     }
 
     companion object {

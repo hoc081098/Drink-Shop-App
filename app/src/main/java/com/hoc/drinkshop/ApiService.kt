@@ -58,6 +58,16 @@ data class Drink(
         val stars: List<String>
 ) : Parcelable
 
+data class Order(
+        val price: Double,
+        val detail: List<Cart>,
+        val comment: String,
+        val phone: String,
+        val address: String,
+        val status: String? = null
+)
+
+
 enum class SortOrder {
     ASC_SORT_STRING,
     DESC_SORT_STRING,
@@ -166,8 +176,13 @@ interface ApiService {
             @Field("phone") phone: String,
             @Field("drink_id") drinkId: Int
     ): RxObservable<Drink>
-}
 
+
+    /* ORDER */
+    @Headers("Content-Type: application/json")
+    @POST("order")
+    fun submitOrder(@Body order: Order): RxObservable<Order>
+}
 
 sealed class Result<out T : Any> {
     data class Success<out T : Any>(

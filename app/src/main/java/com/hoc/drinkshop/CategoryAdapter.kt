@@ -7,21 +7,56 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.daimajia.slider.library.SliderTypes.BaseSliderView
+import com.daimajia.slider.library.SliderTypes.TextSliderView
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.category_item_layout.view.*
+import kotlinx.android.synthetic.main.slider_item_layout.view.*
+import kotlinx.android.synthetic.main.text_item_layout.view.*
 
-infix fun ViewGroup.inflate(@LayoutRes layoutId: Int) =
+infix fun ViewGroup.inflate(@LayoutRes layoutId: Int): View =
         LayoutInflater.from(context).inflate(layoutId, this, false)
 
-class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAdapter<Category, CategoryAdapter.ViewHolder>(diffCallback) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-            CategoryAdapter.ViewHolder(parent inflate R.layout.category_item_layout)
+class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAdapter<Any, RecyclerView.ViewHolder>(diffCallback) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClickListener)
+        when (holder) {
+            is SlideViewHolder -> {
+                holder.bind(item as? List<*>)
+            }
+            is TextViewHolder -> Unit
+            is CategoryViewHolder -> {
+                holder.bind(item as? Category, onClickListener)
+            }
+            else -> throw IllegalStateException("Uknown view holder!")
+        }
     }
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            TYPE_SLIDER -> SlideViewHolder(parent inflate R.layout.slider_item_layout)
+            TYPE_TEXT -> TextViewHolder(parent inflate R.layout.text_item_layout)
+            TYPE_CATEGORY -> CategoryViewHolder(parent inflate R.layout.category_item_layout)
+            else -> throw IllegalStateException("Uknown viewType!")
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return when (position) {
+            0 -> TYPE_SLIDER
+            1 -> TYPE_TEXT
+            else -> TYPE_CATEGORY
+        }
+    }
+
+    fun submitList(list: List<Any>, slideList: List<Banner>) {
+        val mutableList = mutableListOf(slideList, Any())
+                .apply { addAll(list) }
+        super.submitList(mutableList)
+    }
+
+    class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(item: Category?, onClickListener: (Category) -> Unit) = item?.let { category ->
             Picasso.get()
                     .load(category.imageUrl)
@@ -37,11 +72,39 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit) : ListAda
         private val textCategoryName = itemView.textCategoryName!!
     }
 
+    class SlideViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        fun bind(list: List<*>?) {
+            sliderLayout.removeAllSliders()
+            (list ?: return).filterIsInstance(Banner::class.java)
+                    .forEach { (_, name, imageUrl) ->
+                        TextSliderView(itemView.context)
+                                .description(name)
+                                .image(imageUrl)
+                                .setScaleType(BaseSliderView.ScaleType.Fit)
+                                .let(sliderLayout::addSlider)
+                    }
+        }
+
+        val sliderLayout = itemView.sliderLayout
+    }
+
+    class TextViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val textViewPopular = itemView.textViewPopular
+    }
+
     companion object {
+        const val TYPE_SLIDER = 0
+        const val TYPE_TEXT = 1
+        const val TYPE_CATEGORY = 2
+
         @JvmField
-        val diffCallback = object : DiffUtil.ItemCallback<Category>() {
-            override fun areItemsTheSame(oldItem: Category?, newItem: Category?) = oldItem?.id == newItem?.id
-            override fun areContentsTheSame(oldItem: Category?, newItem: Category?) = oldItem == newItem
+        val diffCallback = object : DiffUtil.ItemCallback<Any>() {
+            override fun areItemsTheSame(oldItem: Any?, newItem: Any?) = when {
+                oldItem is Category && newItem is Category -> oldItem.id == newItem.id
+                else -> oldItem == newItem
+            }
+
+            override fun areContentsTheSame(oldItem: Any?, newItem: Any?) = oldItem == newItem
         }
     }
 }

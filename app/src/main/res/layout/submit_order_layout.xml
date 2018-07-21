@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.rengwuxian.materialedittext.MaterialEditText
+        android:id="@+id/editTextComment"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:drawableLeft="@drawable/ic_comment_black_24dp"
+        android:drawablePadding="8dp"
+        android:ellipsize="end"
+        android:ems="10"
+        android:fontFamily="@font/nunito_sans"
+        android:hint="Comment"
+        android:inputType="textMultiLine"
+        android:maxLines="1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:met_baseColor="@color/colorPrimaryDark"
+        app:met_floatingLabel="highlight"
+        app:met_floatingLabelTextColor="@color/colorAccent"
+        app:met_primaryColor="@color/colorPrimaryDark"
+        app:met_textColor="@color/colorTextPrimary"
+        tools:text="" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextComment">
+
+        <RadioButton
+            android:id="@+id/radioUserAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="true"
+            android:fontFamily="@font/nunito_sans"
+            android:text="User address" />
+
+        <RadioButton
+            android:id="@+id/radioOtherAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/nunito_sans"
+            android:text="Other address" />
+
+    </RadioGroup>
+
+    <com.rengwuxian.materialedittext.MaterialEditText
+        android:id="@+id/editTextOtherAddress"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:drawableLeft="@drawable/ic_place_black_24dp"
+        android:drawablePadding="8dp"
+        android:ellipsize="end"
+        android:ems="10"
+        android:enabled="false"
+        android:fontFamily="@font/nunito_sans"
+        android:hint="Other address"
+        android:inputType="text"
+        android:maxLines="1"
+        android:singleLine="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/radioGroup"
+        app:met_baseColor="@color/colorPrimaryDark"
+        app:met_floatingLabel="highlight"
+        app:met_floatingLabelTextColor="@color/colorAccent"
+        app:met_primaryColor="@color/colorPrimaryDark"
+        app:met_textColor="@color/colorTextPrimary"
+        tools:text="" />
+
+</android.support.constraint.ConstraintLayout>
