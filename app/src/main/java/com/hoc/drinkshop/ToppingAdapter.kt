@@ -11,7 +11,7 @@ class ToppingAdapter : ListAdapter<Drink, ToppingAdapter.ViewHolder>(DrinkAdapte
     val checkedTopping: Iterable<Drink> get() = mutableCheckedTopping
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-            ViewHolder(parent inflate R.layout.topping_item_layout)
+        ViewHolder(parent inflate R.layout.topping_item_layout)
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind = true

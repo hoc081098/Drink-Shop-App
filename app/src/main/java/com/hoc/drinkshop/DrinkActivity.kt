@@ -19,7 +19,6 @@ import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.HttpException
 import retrofit2.Retrofit
-import androidx.core.util.Pair as AndroidPair
 
 class DrinkActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
     override val loggerTag: String = "MY_DRINK_TAG"
@@ -46,38 +45,38 @@ class DrinkActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
 
         drinkAdapter = DrinkAdapter(this, user.phone)
         drinkAdapter.clickObservable
-                .concatMap { (adapterPosition, drink) ->
-                    info("concatMap => $drink, $adapterPosition")
-                    val task = when {
-                        user.phone in drink.stars -> apiService.unstar(user.phone, drink.id)
-                        else -> apiService.star(user.phone, drink.id)
-                    }
-                    task.map { it to adapterPosition }
-                            .subscribeOn(Schedulers.io())
+            .concatMap { (adapterPosition, drink) ->
+                info("concatMap => $drink, $adapterPosition")
+                val task = when {
+                    user.phone in drink.stars -> apiService.unstar(user.phone, drink.id)
+                    else -> apiService.star(user.phone, drink.id)
                 }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onNext = { (drink, adapterPosition) ->
-                            info("onNext => $drink, $adapterPosition")
+                task.map { it to adapterPosition }
+                    .subscribeOn(Schedulers.io())
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onNext = { (drink, adapterPosition) ->
+                    info("onNext => $drink, $adapterPosition")
 
-                            drinks[adapterPosition] = drink
-                            drinkAdapter.notifyItemChanged(adapterPosition)
+                    drinks[adapterPosition] = drink
+                    drinkAdapter.notifyItemChanged(adapterPosition)
 
-                            when {
-                                user.phone in drink.stars -> "Added to favorite successfully"
-                                else -> "Removed from favorite successfully"
-                            }.let(::toast)
-                        },
-                        onError = {
-                            when (it) {
-                                is HttpException -> it.response()
-                                        .errorBody()
-                                        ?.let(retrofit::parseResultErrorMessage)
-                                else -> it.message
-                            }.let { it ?: "An error occurred" }.let(::toast)
-                        }
-                )
-                .addTo(compositeDisposable)
+                    when {
+                        user.phone in drink.stars -> "Added to favorite successfully"
+                        else -> "Removed from favorite successfully"
+                    }.let(::toast)
+                },
+                onError = {
+                    when (it) {
+                        is HttpException -> it.response()
+                            .errorBody()
+                            ?.let(retrofit::parseResultErrorMessage)
+                        else -> it.message
+                    }.let { it ?: "An error occurred" }.let(::toast)
+                }
+            )
+            .addTo(compositeDisposable)
 
         recyclerDrink.run {
             setHasFixedSize(true)
@@ -100,19 +99,20 @@ class DrinkActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
     private fun getDrinks() {
         launch(UI, parent = parentJob) {
             apiService.getDrinks(menuId = category.id)
-                    .awaitResult()
-                    .onSuccess {
-                        info(it)
-                        drinks = it.toMutableList()
-                        drinkAdapter.submitList(drinks)
-                    }
-                    .onException {
-                        info(it.message, it)
-                        toast("Cannot get drinks because ${it.message ?: "unknown error"}")
-                    }
-                    .onError {
-                        retrofit.parseResultErrorMessage(it.first).let { toast("Cannot get drinks because: $it") }
-                    }
+                .awaitResult()
+                .onSuccess {
+                    info(it)
+                    drinks = it.toMutableList()
+                    drinkAdapter.submitList(drinks)
+                }
+                .onException {
+                    info(it.message, it)
+                    toast("Cannot get drinks because ${it.message ?: "unknown error"}")
+                }
+                .onError {
+                    retrofit.parseResultErrorMessage(it.first)
+                        .let { toast("Cannot get drinks because: $it") }
+                }
             swipeLayout.post { swipeLayout.isRefreshing = false }
         }
     }

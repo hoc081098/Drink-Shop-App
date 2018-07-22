@@ -48,7 +48,7 @@ class CartsActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(this@CartsActivity)
             adapter = cartAdapter
             ItemTouchHelperCallback(::onSwiped).let(::ItemTouchHelper)
-                    .attachToRecyclerView(this)
+                .attachToRecyclerView(this)
         }
 
         subscribe()
@@ -65,29 +65,29 @@ class CartsActivity : AppCompatActivity() {
         getCarts()
 
         cartDataSource.getCountCart()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onError = { toast(it.message ?: "Uknown error occurred") },
-                        onNext = {
-                            badge.setNumber(it)
-                            buttonPlaceOrder.isEnabled = it > 0
-                            buttonPlaceOrder.isClickable = it > 0
-                            buttonPlaceOrder.translationZ = if (it > 0) 4f else 0f
-                        }
-                )
-                .addTo(compositeDisposable)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onError = { toast(it.message ?: "Uknown error occurred") },
+                onNext = {
+                    badge.setNumber(it)
+                    buttonPlaceOrder.isEnabled = it > 0
+                    buttonPlaceOrder.isClickable = it > 0
+                    buttonPlaceOrder.translationZ = if (it > 0) 4f else 0f
+                }
+            )
+            .addTo(compositeDisposable)
         cartDataSource.getSumPrice()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onError = { toast(it.message ?: "Uknown error occurred") },
-                        onNext = {
-                            val price = it.firstOrNull() ?: 0.0
-                            textTotalPrice.text = "Total $${decimalFormatPrice.format(price)}"
-                            totalPrice = price
-                        }
-                )
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onError = { toast(it.message ?: "Uknown error occurred") },
+                onNext = {
+                    val price = it.firstOrNull() ?: 0.0
+                    textTotalPrice.text = "Total $${decimalFormatPrice.format(price)}"
+                    totalPrice = price
+                }
+            )
     }
 
     private fun submitOrder() {
@@ -99,51 +99,51 @@ class CartsActivity : AppCompatActivity() {
         }
 
         AlertDialog.Builder(this)
-                .setTitle("Submit order")
-                .setView(view)
-                .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-                .setPositiveButton("Ok") { dialog, _ ->
-                    dialog.dismiss()
+            .setTitle("Submit order")
+            .setView(view)
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .setPositiveButton("Ok") { dialog, _ ->
+                dialog.dismiss()
 
-                    val address = if (editTextOtherAddress.isEnabled) {
-                        editTextOtherAddress.text.toString()
-                    } else {
-                        user.address
-                    }
-                    if (address.isBlank()) {
-                        toast("Please input address")
-                        return@setPositiveButton
-                    }
-                    val comment = view.editTextComment.text.toString()
-
-                    launch(UI, parent = parentJob) {
-                        Order(
-                                detail = carts,
-                                price = totalPrice,
-                                phone = user.phone,
-                                address = address,
-                                comment = comment
-                        ).let(apiService::submitOrder)
-                                .subscribeOn(Schedulers.io())
-                                .flatMapCompletable {
-                                    cartDataSource.deleteAllCart().subscribeOn(Schedulers.io())
-                                }
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribeBy(
-                                        onError = {
-                                            when (it) {
-                                                is HttpException -> it.response()
-                                                        .errorBody()
-                                                        ?.let(retrofit::parseResultErrorMessage)
-                                                else -> it.message
-                                            }.let { it ?: "An error occurred" }.let(::toast)
-                                        },
-                                        onComplete = { toast("Submit order successfully") }
-                                )
-                    }
+                val address = if (editTextOtherAddress.isEnabled) {
+                    editTextOtherAddress.text.toString()
+                } else {
+                    user.address
                 }
-                .create()
-                .show()
+                if (address.isBlank()) {
+                    toast("Please input address")
+                    return@setPositiveButton
+                }
+                val comment = view.editTextComment.text.toString()
+
+                launch(UI, parent = parentJob) {
+                    Order(
+                        detail = carts,
+                        price = totalPrice,
+                        phone = user.phone,
+                        address = address,
+                        comment = comment
+                    ).let(apiService::submitOrder)
+                        .subscribeOn(Schedulers.io())
+                        .flatMapCompletable {
+                            cartDataSource.deleteAllCart().subscribeOn(Schedulers.io())
+                        }
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribeBy(
+                            onError = {
+                                when (it) {
+                                    is HttpException -> it.response()
+                                        .errorBody()
+                                        ?.let(retrofit::parseResultErrorMessage)
+                                    else -> it.message
+                                }.let { it ?: "An error occurred" }.let(::toast)
+                            },
+                            onComplete = { toast("Submit order successfully") }
+                        )
+                }
+            }
+            .create()
+            .show()
     }
 
     private fun onSwiped(viewHolder: RecyclerView.ViewHolder) {
@@ -155,37 +155,37 @@ class CartsActivity : AppCompatActivity() {
         val cart = carts[position]
 
         cartDataSource.deleteCart(cart)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onError = {
-                            toast("Delete error: ${it.message ?: "unknown error"}")
-                        },
-                        onComplete = {
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onError = {
+                    toast("Delete error: ${it.message ?: "unknown error"}")
+                },
+                onComplete = {
 
-                            Snackbar.make(carts_layout, "Delete successfully", Snackbar.LENGTH_SHORT)
-                                    .setAction("UNDO") {
+                    Snackbar.make(carts_layout, "Delete successfully", Snackbar.LENGTH_SHORT)
+                        .setAction("UNDO") {
 
-                                        cartDataSource.insertCart(cart)
-                                                .subscribeOn(Schedulers.io())
-                                                .observeOn(AndroidSchedulers.mainThread())
-                                                .subscribeBy(
-                                                        onError = {
-                                                            toast("Undo error: ${it.message
-                                                                    ?: "unknown error"}")
-                                                        },
-                                                        onComplete = {
-                                                            toast("Undo successfully")
-                                                        }
-                                                )
-                                                .addTo(compositeDisposable)
-
+                            cartDataSource.insertCart(cart)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribeBy(
+                                    onError = {
+                                        toast(
+                                            "Undo error: ${it.message
+                                                ?: "unknown error"}"
+                                        )
+                                    },
+                                    onComplete = {
+                                        toast("Undo successfully")
                                     }
-                                    .show()
-
+                                )
+                                .addTo(compositeDisposable)
                         }
-                )
-                .addTo(compositeDisposable)
+                        .show()
+                }
+            )
+            .addTo(compositeDisposable)
     }
 
     override fun onStop() {
@@ -200,35 +200,33 @@ class CartsActivity : AppCompatActivity() {
 
     private fun getCarts() {
         cartDataSource.getAllCart()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onError = { toast("Get carts error: ${it.message ?: "unknown error"}") },
-                        onNext = {
-                            carts = it.toMutableList()
-                            cartAdapter.submitList(carts)
-                        }
-                )
-                .addTo(compositeDisposable)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onError = { toast("Get carts error: ${it.message ?: "unknown error"}") },
+                onNext = {
+                    carts = it.toMutableList()
+                    cartAdapter.submitList(carts)
+                }
+            )
+            .addTo(compositeDisposable)
     }
 
     private fun onNumberChanged(cart: Cart, adapterPosition: Int, newValue: Int) {
         val totalPrice = cart.price / cart.number * newValue
         val updated = cart.copy(number = newValue, price = totalPrice)
         cartDataSource.updateCart(updated)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onError = {
-                            toast("Update number error: ${it.message ?: "unknown error"}")
-                        },
-                        onComplete = {
-                            carts[adapterPosition] = updated
-                            cartAdapter.notifyItemChanged(adapterPosition)
-                        }
-                )
-                .addTo(compositeDisposable)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onError = {
+                    toast("Update number error: ${it.message ?: "unknown error"}")
+                },
+                onComplete = {
+                    carts[adapterPosition] = updated
+                    cartAdapter.notifyItemChanged(adapterPosition)
+                }
+            )
+            .addTo(compositeDisposable)
     }
 }
-
-

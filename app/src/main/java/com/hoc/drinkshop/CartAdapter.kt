@@ -9,16 +9,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.cart_item_layout.view.*
 
-class CartAdapter(private val onNumberChanged: (Cart, Int, Int) -> Unit)
-    : ListAdapter<Cart, CartAdapter.ViewHolder>(cartDiffCallback) {
+class CartAdapter(private val onNumberChanged: (Cart, Int, Int) -> Unit) :
+    ListAdapter<Cart, CartAdapter.ViewHolder>(cartDiffCallback) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return LayoutInflater.from(parent.context)
-                .inflate(R.layout.cart_item_layout, parent, false)
-                .let(::ViewHolder)
+            .inflate(R.layout.cart_item_layout, parent, false)
+            .let(::ViewHolder)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) =
-            holder.bind(getItem(position))
+        holder.bind(getItem(position))
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val imageCartItem = itemView.imageCartItem
@@ -36,14 +36,17 @@ class CartAdapter(private val onNumberChanged: (Cart, Int, Int) -> Unit)
 
         fun bind(cart: Cart) {
             Picasso.get()
-                    .load(cart.imageUrl)
-                    .fit()
-                    .error(R.drawable.ic_image_black_24dp)
-                    .placeholder(R.drawable.ic_image_black_24dp)
-                    .into(imageCartItem)
+                .load(cart.imageUrl)
+                .fit()
+                .error(R.drawable.ic_image_black_24dp)
+                .placeholder(R.drawable.ic_image_black_24dp)
+                .into(imageCartItem)
             textCartTitle.text = "${cart.name} x${cart.number} size ${cart.cupSize}"
             textSugarIce.text = "Sugar: ${cart.sugar}%, ice: ${cart.ice}%"
-            textPrice.text = itemView.context.getString(R.string.price, DrinkAdapter.decimalFormatPrice.format(cart.price))
+            textPrice.text = itemView.context.getString(
+                R.string.price,
+                DrinkAdapter.decimalFormatPrice.format(cart.price)
+            )
             numberButton.number = cart.number.toString()
         }
     }

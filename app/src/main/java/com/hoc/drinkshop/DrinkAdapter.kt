@@ -13,7 +13,6 @@ import kotlinx.coroutines.experimental.timeunit.TimeUnit
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 
-
 @Suppress("unused")
 inline val Any?.unit
     get() = Unit
@@ -21,11 +20,15 @@ inline val Any?.unit
 private typealias DrinkAdapterSubjectItemType = Pair<Int, Drink>
 
 class DrinkAdapter(
-        private val onCLickListener: (Drink) -> Unit,
-        private val userPhone: String
+    private val onCLickListener: (Drink) -> Unit,
+    private val userPhone: String
 ) : ListAdapter<Drink, DrinkAdapter.ViewHolder>(diffCallback) {
     private val subject = PublishSubject.create<DrinkAdapterSubjectItemType>()
-    val clickObservable: Observable<DrinkAdapterSubjectItemType> get() = subject.throttleFirst(400, TimeUnit.MILLISECONDS)
+    val clickObservable: Observable<DrinkAdapterSubjectItemType>
+        get() = subject.throttleFirst(
+            400,
+            TimeUnit.MILLISECONDS
+        )
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(parent inflate R.layout.drink_item_layout)
@@ -35,7 +38,8 @@ class DrinkAdapter(
         holder.bind(getItem(position))
     }
 
-    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
+        View.OnClickListener {
         private val textDrinkName = itemView.textDrinkName!!
         private val imageDrink = itemView.imageDrink!!
         private val imageAddToCart = itemView.imageAddToCart!!
@@ -58,14 +62,15 @@ class DrinkAdapter(
 
         fun bind(drink: Drink) {
             textDrinkName.text = drink.name
-            textDrinkPrice.text = itemView.context.getString(R.string.price, decimalFormatPrice.format(drink.price))
+            textDrinkPrice.text =
+                itemView.context.getString(R.string.price, decimalFormatPrice.format(drink.price))
             textNumberOfStars.text = decimalFormatStarCount.format(drink.starCount.toLong())
             Picasso.get()
-                    .load(drink.imageUrl)
-                    .fit()
-                    .error(R.drawable.ic_image_black_24dp)
-                    .placeholder(R.drawable.ic_image_black_24dp)
-                    .into(imageDrink)
+                .load(drink.imageUrl)
+                .fit()
+                .error(R.drawable.ic_image_black_24dp)
+                .placeholder(R.drawable.ic_image_black_24dp)
+                .into(imageDrink)
 
             val isFavorite = userPhone in drink.stars
             when {
@@ -78,7 +83,6 @@ class DrinkAdapter(
 //                    .throttleFirst(400, TimeUnit.MILLISECONDS)
 //                    .map { adapterPosition to drink }
 //                    .subscribe(subject)
-
         }
     }
 
@@ -95,6 +99,7 @@ class DrinkAdapter(
         @JvmField
         val decimalFormatPrice = DecimalFormat.getInstance()!!
         @JvmField
-        val decimalFormatStarCount = DecimalFormat("###,###", DecimalFormatSymbols().apply { groupingSeparator = ' ' })
+        val decimalFormatStarCount =
+            DecimalFormat("###,###", DecimalFormatSymbols().apply { groupingSeparator = ' ' })
     }
 }

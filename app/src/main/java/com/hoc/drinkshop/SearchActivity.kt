@@ -86,80 +86,83 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
         val sortName = spinnerSortName.selectedItem as SortOrder
         val limit = spinnerLimit.selectedItem as Int
 
-        info("query=[$query], sortPrice=[$sortPrice], sortStarCount=[$sortStarCount]," +
-                " sortName=[$sortName], limit=[$limit], minPrice=[$minPrice], maxPrice=[$maxPrice]")
+        info(
+            "query=[$query], sortPrice=[$sortPrice], sortStarCount=[$sortStarCount]," +
+                " sortName=[$sortName], limit=[$limit], minPrice=[$minPrice], maxPrice=[$maxPrice]"
+        )
 
         launch(UI) {
-            //TransitionManager.beginDelayedTransition(content_layout, Fade())
+            // TransitionManager.beginDelayedTransition(content_layout, Fade())
             textViewEmpty.visibility = View.INVISIBLE
             recyclerSearch.visibility = View.INVISIBLE
             progressBar.visibility = View.VISIBLE
 
             apiService.getDrinks(
-                    name = query,
-                    minPrice = minPrice.toDouble(),
-                    maxPrice = maxPrice.toDouble(),
-                    sortPrice = sortPrice,
-                    sortName = sortName,
-                    sortStar = sortStarCount,
-                    limit = limit
+                name = query,
+                minPrice = minPrice.toDouble(),
+                maxPrice = maxPrice.toDouble(),
+                sortPrice = sortPrice,
+                sortName = sortName,
+                sortStar = sortStarCount,
+                limit = limit
             )
-                    .awaitResult()
-                    .onError {}
-                    .onException {}
-                    .onSuccess {
-                        drinks = it.toMutableList()
+                .awaitResult()
+                .onError {}
+                .onException {}
+                .onSuccess {
+                    drinks = it.toMutableList()
 
-                        //TransitionManager.beginDelayedTransition(content_layout, Fade())
-                        progressBar.visibility = View.INVISIBLE
-                        if (drinks.isNotEmpty()) {
-                            recyclerSearch.visibility = View.VISIBLE
-                            textViewEmpty.visibility = View.INVISIBLE
+                    // TransitionManager.beginDelayedTransition(content_layout, Fade())
+                    progressBar.visibility = View.INVISIBLE
+                    if (drinks.isNotEmpty()) {
+                        recyclerSearch.visibility = View.VISIBLE
+                        textViewEmpty.visibility = View.INVISIBLE
 
-                            searchAdapter.submitList(drinks)
-                            toast("Found ${it.size} drinks")
-                        } else {
-                            textViewEmpty.visibility = View.VISIBLE
-                            recyclerSearch.visibility = View.INVISIBLE
-                        }
+                        searchAdapter.submitList(drinks)
+                        toast("Found ${it.size} drinks")
+                    } else {
+                        textViewEmpty.visibility = View.VISIBLE
+                        recyclerSearch.visibility = View.INVISIBLE
                     }
+                }
         }
     }
 
-    override fun invoke(drink: Drink) = startActivity<AddToCartActivity>(DrinkActivity.DRINK to drink)
+    override fun invoke(drink: Drink) =
+        startActivity<AddToCartActivity>(DrinkActivity.DRINK to drink)
 
     private fun setupSearchAdapter() {
         searchAdapter = DrinkAdapter(this, user.phone)
         searchAdapter.clickObservable
-                .concatMap { (pos, drink) ->
-                    val task = when {
-                        user.phone in drink.stars -> apiService.unstar(user.phone, drink.id)
-                        else -> apiService.star(user.phone, drink.id)
-                    }
-                    task.map { it to pos }
-                            .subscribeOn(Schedulers.io())
+            .concatMap { (pos, drink) ->
+                val task = when {
+                    user.phone in drink.stars -> apiService.unstar(user.phone, drink.id)
+                    else -> apiService.star(user.phone, drink.id)
                 }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onNext = { (drink, adapterPosition) ->
-                            drinks[adapterPosition] = drink
-                            searchAdapter.notifyItemChanged(adapterPosition)
+                task.map { it to pos }
+                    .subscribeOn(Schedulers.io())
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onNext = { (drink, adapterPosition) ->
+                    drinks[adapterPosition] = drink
+                    searchAdapter.notifyItemChanged(adapterPosition)
 
-                            when {
-                                user.phone in drink.stars -> "Added to favorite successfully"
-                                else -> "Removed from favorite successfully"
-                            }.let(::toast)
-                        },
-                        onError = {
-                            when (it) {
-                                is HttpException -> it.response()
-                                        .errorBody()
-                                        ?.let(retrofit::parseResultErrorMessage)
-                                else -> it.message
-                            }.let { it ?: "An error occurred" }.let(::toast)
-                        }
-                )
-                .addTo(compositeDisposable)
+                    when {
+                        user.phone in drink.stars -> "Added to favorite successfully"
+                        else -> "Removed from favorite successfully"
+                    }.let(::toast)
+                },
+                onError = {
+                    when (it) {
+                        is HttpException -> it.response()
+                            .errorBody()
+                            ?.let(retrofit::parseResultErrorMessage)
+                        else -> it.message
+                    }.let { it ?: "An error occurred" }.let(::toast)
+                }
+            )
+            .addTo(compositeDisposable)
     }
 
     override fun onDestroy() {
@@ -170,22 +173,24 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
     private fun setupFilterBottomSheet() {
         val bottomSheetBehavior = BottomSheetBehavior.from(filter_bottom_sheet)
         val upDrawable = ContextCompat.getDrawable(this, R.drawable.ic_arrow_drop_up_black_24dp)
-        val dowwnDrawable = ContextCompat.getDrawable(this, R.drawable.ic_arrow_drop_down_black_24dp)
+        val dowwnDrawable =
+            ContextCompat.getDrawable(this, R.drawable.ic_arrow_drop_down_black_24dp)
 
-        bottomSheetBehavior.setBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+        bottomSheetBehavior.setBottomSheetCallback(object :
+            BottomSheetBehavior.BottomSheetCallback() {
             override fun onSlide(p0: View, p1: Float) = Unit
 
             override fun onStateChanged(v: View, state: Int) {
                 if (state in listOf(STATE_COLLAPSED, STATE_EXPANDED))
                     TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                            buttonFilter,
-                            null,
-                            null,
-                            when (state) {
-                                STATE_COLLAPSED -> upDrawable
-                                else -> dowwnDrawable
-                            },
-                            null
+                        buttonFilter,
+                        null,
+                        null,
+                        when (state) {
+                            STATE_COLLAPSED -> upDrawable
+                            else -> dowwnDrawable
+                        },
+                        null
                     )
             }
         })
@@ -202,15 +207,15 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
 
         setupRangeSeekbar()
         spinnerLimit.adapter = ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                (10..100 step 10).toList()
+            this,
+            android.R.layout.simple_spinner_dropdown_item,
+            (10..100 step 10).toList()
         )
         spinnerLimit.setSelection(1)
         ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                listOf(SortOrder.ASC_FULL_STRING, SortOrder.DESC_FULL_STRING)
+            this,
+            android.R.layout.simple_spinner_dropdown_item,
+            listOf(SortOrder.ASC_FULL_STRING, SortOrder.DESC_FULL_STRING)
         ).let {
             spinnerSortName.adapter = it
             spinnerSortName.setSelection(0)
@@ -223,19 +228,19 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
 
     private fun setupRangeSeekbar() {
         apiService.getMaxPrice().zipWith(apiService.getMinPrice())
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onNext = { (max, min) ->
-                            price_rangebar.run {
-                                tickStart = ceil(min.price.toFloat())
-                                tickEnd = floor(max.price.toFloat())
-                                setTickInterval((tickEnd - tickStart) / 10)
-                            }
-                        },
-                        onError = {}
-                )
-                .addTo(compositeDisposable)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onNext = { (max, min) ->
+                    price_rangebar.run {
+                        tickStart = ceil(min.price.toFloat())
+                        tickEnd = floor(max.price.toFloat())
+                        setTickInterval((tickEnd - tickStart) / 10)
+                    }
+                },
+                onError = {}
+            )
+            .addTo(compositeDisposable)
         price_rangebar.setOnRangeBarChangeListener { _, _, _, leftPinValue, rightPinValue ->
             minPrice = leftPinValue.toFloatOrNull() ?: 0f
             maxPrice = rightPinValue.toFloatOrNull() ?: 0f
@@ -247,7 +252,6 @@ class SearchActivity : AppCompatActivity(), AnkoLogger, (Drink) -> Unit {
         menu?.findItem(R.id.action_search)?.let(search_view::setMenuItem)
         return true
     }
-
 
     override fun onBackPressed() {
         if (search_view.isSearchOpen) {

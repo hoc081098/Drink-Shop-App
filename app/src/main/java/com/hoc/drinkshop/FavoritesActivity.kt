@@ -43,22 +43,24 @@ fun MaterialSearchView.textChange(): Flowable<String> {
         override fun onQueryTextSubmit(query: String?) = true
 
         override fun onQueryTextChange(newText: String?) =
-                newText?.let {
-                    processor.onNext(it)
-                    true
-                } == true
+            newText?.let {
+                processor.onNext(it)
+                true
+            } == true
     })
     return processor.onBackpressureLatest().hide()
 }
 
-class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit)
-    : ListAdapter<Drink, FavoritesAdapter.ViewHolder>(diffCallback) {
+class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit) :
+    ListAdapter<Drink, FavoritesAdapter.ViewHolder>(diffCallback) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
-            ViewHolder(parent inflate R.layout.fav_item_layout)
+        ViewHolder(parent inflate R.layout.fav_item_layout)
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) = holder.bind(getItem(position))
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) =
+        holder.bind(getItem(position))
 
-    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
+        View.OnClickListener {
         private val textName = itemView.textName
         private val imageView = itemView.imageView
         private val cardView = itemView.cardView
@@ -75,13 +77,14 @@ class FavoritesAdapter(private val onClickListener: (Drink, Int) -> Unit)
 
         fun bind(drink: Drink) {
             textName.text = drink.name
-            textPrice.text = itemView.context.getString(R.string.price, decimalFormatPrice.format(drink.price))
+            textPrice.text =
+                itemView.context.getString(R.string.price, decimalFormatPrice.format(drink.price))
             Picasso.get()
-                    .load(drink.imageUrl)
-                    .fit()
-                    .placeholder(R.drawable.ic_image_black_24dp)
-                    .error(R.drawable.ic_image_black_24dp)
-                    .into(imageView)
+                .load(drink.imageUrl)
+                .fit()
+                .placeholder(R.drawable.ic_image_black_24dp)
+                .error(R.drawable.ic_image_black_24dp)
+                .into(imageView)
             imageFav.setImageResource(R.drawable.ic_favorite_black_24dp)
         }
     }
@@ -105,31 +108,30 @@ class FavoritesActivity : AppCompatActivity(), AnkoLogger {
         }
     }
 
-
     private fun removeFromFavorites(phone: String, drink: Drink) {
         compositeDisposable += apiService.unstar(phone, drink.id)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onError = {
-                            when (it) {
-                                is HttpException -> it.response().errorBody()?.let {
-                                    retrofit.parseResultErrorMessage(it)
-                                            .let(::toast)
-                                }
-                                else -> toast(it.message ?: "An error occurred")
-                            }
-                        },
-                        onNext = { d ->
-                            drinks.indexOfFirst { it.id == d.id }
-                                    .takeIf { it >= 0 }
-                                    ?.let {
-                                        drinks.removeAt(it)
-                                        favoritesAdapter.notifyItemRemoved(it)
-                                        toast("Removed from favorites successfully")
-                                    }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onError = {
+                    when (it) {
+                        is HttpException -> it.response().errorBody()?.let {
+                            retrofit.parseResultErrorMessage(it)
+                                .let(::toast)
                         }
-                )
+                        else -> toast(it.message ?: "An error occurred")
+                    }
+                },
+                onNext = { d ->
+                    drinks.indexOfFirst { it.id == d.id }
+                        .takeIf { it >= 0 }
+                        ?.let {
+                            drinks.removeAt(it)
+                            favoritesAdapter.notifyItemRemoved(it)
+                            toast("Removed from favorites successfully")
+                        }
+                }
+            )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -151,39 +153,38 @@ class FavoritesActivity : AppCompatActivity(), AnkoLogger {
         }
 
         search_view.textChange()
-                .throttleFirst(300, TimeUnit.MILLISECONDS)
-                .distinctUntilChanged()
-                .map { it.toLowerCase() }
-                .switchMap { queryString ->
-                    info("onNext: $queryString")
-                    apiService
-                            .getDrinksFlowable(
-                                    name = if (queryString.isBlank()) null else queryString,
-                                    phone = user.phone
-                            )
-                            .subscribeOn(Schedulers.io())
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onError = {
-                            when (it) {
-                                is HttpException -> it.response().errorBody()?.let {
-                                    retrofit.parseResultErrorMessage(it)
-                                            .let(::toast)
-                                }
-                                else -> toast(it.message ?: "An error occurred")
-                            }
-                        },
-                        onNext = {
-                            info("onNext: ${it.size}")
-                            drinks = it.toMutableList()
-                            favoritesAdapter.submitList(drinks)
+            .throttleFirst(300, TimeUnit.MILLISECONDS)
+            .distinctUntilChanged()
+            .map { it.toLowerCase() }
+            .switchMap { queryString ->
+                info("onNext: $queryString")
+                apiService
+                    .getDrinksFlowable(
+                        name = if (queryString.isBlank()) null else queryString,
+                        phone = user.phone
+                    )
+                    .subscribeOn(Schedulers.io())
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onError = {
+                    when (it) {
+                        is HttpException -> it.response().errorBody()?.let {
+                            retrofit.parseResultErrorMessage(it)
+                                .let(::toast)
                         }
-                )
-                .addTo(compositeDisposable)
+                        else -> toast(it.message ?: "An error occurred")
+                    }
+                },
+                onNext = {
+                    info("onNext: ${it.size}")
+                    drinks = it.toMutableList()
+                    favoritesAdapter.submitList(drinks)
+                }
+            )
+            .addTo(compositeDisposable)
         search_view.setQuery("", false)
     }
-
 
     private fun onSwiped(viewHolder: RecyclerView.ViewHolder) {
         if (viewHolder is FavoritesAdapter.ViewHolder) {
@@ -224,5 +225,3 @@ class FavoritesActivity : AppCompatActivity(), AnkoLogger {
         compositeDisposable.clear()
     }
 }
-
-

@@ -14,10 +14,10 @@ import kotlinx.android.synthetic.main.category_item_layout.view.*
 import kotlinx.android.synthetic.main.slider_item_layout.view.*
 
 infix fun ViewGroup.inflate(@LayoutRes layoutId: Int): View =
-        LayoutInflater.from(context).inflate(layoutId, this, false)
+    LayoutInflater.from(context).inflate(layoutId, this, false)
 
-class CategoryAdapter(private val onClickListener: (Category) -> Unit)
-    : ListAdapter<Any, RecyclerView.ViewHolder>(diffCallback) {
+class CategoryAdapter(private val onClickListener: (Category) -> Unit) :
+    ListAdapter<Any, RecyclerView.ViewHolder>(diffCallback) {
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
 
@@ -52,7 +52,7 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit)
 
     fun submitList(list: List<Category>, slideList: List<Banner>) {
         val mutableList = mutableListOf(slideList, 0)
-                .apply { addAll(list) }
+            .apply { addAll(list) }
         super.submitList(mutableList)
     }
 
@@ -70,11 +70,11 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit)
 
         fun bind(item: Category?) = item?.let { category ->
             Picasso.get()
-                    .load(category.imageUrl)
-                    .fit()
-                    .error(R.drawable.ic_image_black_24dp)
-                    .placeholder(R.drawable.ic_image_black_24dp)
-                    .into(imageCategory)
+                .load(category.imageUrl)
+                .fit()
+                .error(R.drawable.ic_image_black_24dp)
+                .placeholder(R.drawable.ic_image_black_24dp)
+                .into(imageCategory)
             textCategoryName.text = category.name
         }
     }
@@ -83,13 +83,13 @@ class CategoryAdapter(private val onClickListener: (Category) -> Unit)
         fun bind(list: List<*>?) {
             sliderLayout.removeAllSliders()
             (list ?: return).filterIsInstance(Banner::class.java)
-                    .forEach { (_, name, imageUrl) ->
-                        TextSliderView(itemView.context)
-                                .description(name)
-                                .image(imageUrl)
-                                .setScaleType(BaseSliderView.ScaleType.Fit)
-                                .let(sliderLayout::addSlider)
-                    }
+                .forEach { (_, name, imageUrl) ->
+                    TextSliderView(itemView.context)
+                        .description(name)
+                        .image(imageUrl)
+                        .setScaleType(BaseSliderView.ScaleType.Fit)
+                        .let(sliderLayout::addSlider)
+                }
         }
 
         val sliderLayout = itemView.sliderLayout

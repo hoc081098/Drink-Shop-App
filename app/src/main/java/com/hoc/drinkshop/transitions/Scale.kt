@@ -53,7 +53,12 @@ class Scale : Visibility {
         return this
     }
 
-    private fun createAnimation(view: View, startScale: Float, endScale: Float, values: TransitionValues?): Animator? {
+    private fun createAnimation(
+        view: View,
+        startScale: Float,
+        endScale: Float,
+        values: TransitionValues?
+    ): Animator? {
         val initialScaleX = view.scaleX
         val initialScaleY = view.scaleY
         var startScaleX = initialScaleX * startScale
@@ -80,8 +85,8 @@ class Scale : Visibility {
         view.scaleY = startScaleY
 
         val animator = mergeAnimators(
-                ObjectAnimator.ofFloat(view, View.SCALE_X, startScaleX, endScaleX),
-                ObjectAnimator.ofFloat(view, View.SCALE_Y, startScaleY, endScaleY)
+            ObjectAnimator.ofFloat(view, View.SCALE_X, startScaleX, endScaleX),
+            ObjectAnimator.ofFloat(view, View.SCALE_Y, startScaleY, endScaleY)
         )
         addListener(object : TransitionListenerAdapter() {
             override fun onTransitionEnd(transition: Transition) {
@@ -93,13 +98,21 @@ class Scale : Visibility {
         return animator
     }
 
-    override fun onAppear(sceneRoot: ViewGroup, view: View, startValues: TransitionValues?,
-                          endValues: TransitionValues?): Animator? {
+    override fun onAppear(
+        sceneRoot: ViewGroup,
+        view: View,
+        startValues: TransitionValues?,
+        endValues: TransitionValues?
+    ): Animator? {
         return createAnimation(view, disappearedScale, 1f, startValues)
     }
 
-    override fun onDisappear(sceneRoot: ViewGroup, view: View, startValues: TransitionValues?,
-                             endValues: TransitionValues?): Animator? {
+    override fun onDisappear(
+        sceneRoot: ViewGroup,
+        view: View,
+        startValues: TransitionValues?,
+        endValues: TransitionValues?
+    ): Animator? {
         return createAnimation(view, 1f, disappearedScale, startValues)
     }
 

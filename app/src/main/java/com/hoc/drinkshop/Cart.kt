@@ -1,24 +1,33 @@
 package com.hoc.drinkshop
 
 import android.app.Application
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Database
+import androidx.room.Delete
+import androidx.room.Entity
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.PrimaryKey
+import androidx.room.Query
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.Update
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import org.koin.dsl.module.module
 
-
 @Entity(tableName = "carts")
 data class Cart(
-        val name: String,
-        val drinkId: Int,
-        val imageUrl: String,
-        val number: Int,
-        val comment: String,
-        val cupSize: String,
-        val sugar: Int,
-        val ice: Int,
-        val price: Double,
-        @PrimaryKey(autoGenerate = true) var id: Int = 0
+    val name: String,
+    val drinkId: Int,
+    val imageUrl: String,
+    val number: Int,
+    val comment: String,
+    val cupSize: String,
+    val sugar: Int,
+    val ice: Int,
+    val price: Double,
+    @PrimaryKey(autoGenerate = true) var id: Int = 0
 )
 
 @Dao
@@ -107,13 +116,16 @@ class CartRepository(private val dao: CartDao) : CartDataSource {
             dao.deleteAllCart()
         }
     }
-
 }
 
 val cartModule = module {
     single {
-        Room.databaseBuilder(get<Application>(), LocalDatabase::class.java, LocalDatabase.CART_DB_NAME)
-                .build()
+        Room.databaseBuilder(
+            get<Application>(),
+            LocalDatabase::class.java,
+            LocalDatabase.CART_DB_NAME
+        )
+            .build()
     }
 
     single { get<LocalDatabase>().cartDao() }

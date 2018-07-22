@@ -10,13 +10,13 @@ import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.moshi.MoshiConverterFactory
-import java.util.*
+import java.util.Date
 
 val retrofitModule = module {
     single<Moshi> {
         Moshi.Builder()
-                .add(Date::class.java, Rfc3339DateJsonAdapter())
-                .build()
+            .add(Date::class.java, Rfc3339DateJsonAdapter())
+            .build()
     }
 
     single { MoshiConverterFactory.create(get()) } bind Converter.Factory::class
@@ -36,11 +36,11 @@ val retrofitModule = module {
 
     single<Retrofit> {
         Retrofit.Builder()
-                .addConverterFactory(get())
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .client(get())
-                .baseUrl(BASE_URL)
-                .build()
+            .addConverterFactory(get())
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .client(get())
+            .baseUrl(BASE_URL)
+            .build()
     }
     single<ApiService> {
         get<Retrofit>().create(ApiService::class.java)

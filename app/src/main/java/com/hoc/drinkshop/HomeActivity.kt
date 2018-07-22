@@ -44,7 +44,14 @@ import kotlinx.coroutines.experimental.launch
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-import org.jetbrains.anko.*
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.alert
+import org.jetbrains.anko.clearTask
+import org.jetbrains.anko.info
+import org.jetbrains.anko.intentFor
+import org.jetbrains.anko.newTask
+import org.jetbrains.anko.startActivity
+import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
 import java.io.ByteArrayOutputStream
@@ -60,7 +67,8 @@ fun Bitmap.getResizedBitmap(newWidth: Int, newHeight: Int, isNecessaryToKeepOrig
     return resizedBitmap
 }
 
-class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, AnkoLogger, (Category) -> Unit {
+class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
+    AnkoLogger, (Category) -> Unit {
     override val loggerTag: String = "MY_TAG_HOME"
 
     private val apiService by inject<ApiService>()
@@ -75,7 +83,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val compositeDisposable = CompositeDisposable()
 
     override fun invoke(category: Category) =
-            startActivity<DrinkActivity>(CATEGORY to category, USER to user)
+        startActivity<DrinkActivity>(CATEGORY to category, USER to user)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,7 +91,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setSupportActionBar(toolbar)
 
         val toggle = ActionBarDrawerToggle(
-                this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
+            this,
+            drawer_layout,
+            toolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
         drawer_layout.addDrawerListener(toggle)
         toggle.syncState()
         nav_view.setNavigationItemSelectedListener(this)
@@ -97,16 +110,17 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         recyclerCategory.run {
             layoutManager = GridLayoutManager(this@HomeActivity, 2)
-                    .apply {
-                        spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                            override fun getSpanSize(position: Int) = when (categoryAdapter.getItemViewType(position)) {
+                .apply {
+                    spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                        override fun getSpanSize(position: Int) =
+                            when (categoryAdapter.getItemViewType(position)) {
                                 TYPE_SLIDER -> 2
                                 TYPE_TEXT -> 2
                                 TYPE_CATEGORY -> 1
                                 else -> throw IllegalStateException("Unknown view type!")
                             }
-                        }
                     }
+                }
             setHasFixedSize(true)
             adapter = categoryAdapter
         }
@@ -129,14 +143,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 swipeLayout.post { swipeLayout.isRefreshing = false }
 
-                //update recycler categories
+                // update recycler categories
                 categoryAdapter.submitList(categories, banners)
 
-                //update navigation view
+                // update navigation view
                 bindHeaderView(user.also { this@HomeActivity.user = it })
-
             } catch (exception: Throwable) {
-
             }
         }
     }
@@ -149,15 +161,15 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val imageUrl = user.imageUrl
         if (!imageUrl.isNullOrEmpty()) {
             Picasso.get()
-                    .load(imageUrl)
-                    .memoryPolicy(MemoryPolicy.NO_CACHE)
-                    .networkPolicy(NetworkPolicy.NO_CACHE)
-                    .noFade()
-                    .fit()
-                    .centerCrop()
-                    .placeholder(R.drawable.ic_account_circle_black_24dp)
-                    .error(R.drawable.ic_account_circle_black_24dp)
-                    .into(imageViewAvatar)
+                .load(imageUrl)
+                .memoryPolicy(MemoryPolicy.NO_CACHE)
+                .networkPolicy(NetworkPolicy.NO_CACHE)
+                .noFade()
+                .fit()
+                .centerCrop()
+                .placeholder(R.drawable.ic_account_circle_black_24dp)
+                .error(R.drawable.ic_account_circle_black_24dp)
+                .into(imageViewAvatar)
         }
     }
 
@@ -180,51 +192,53 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         launch(UI, parent = parentJob) {
             val fileName = contentResolver.query(imageUri, null, null, null, null)
-                    .use {
-                        it.moveToFirst()
-                        it.getString(it.getColumnIndex(OpenableColumns.DISPLAY_NAME))
-                    }
+                .use {
+                    it.moveToFirst()
+                    it.getString(it.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                }
 
             val bytes = ByteArrayOutputStream().use {
                 val width = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        72f,
-                        resources.displayMetrics
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    72f,
+                    resources.displayMetrics
                 ).toInt()
                 MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
-                        .getResizedBitmap(
-                                width,
-                                width,
-                                false
-                        ).compress(Bitmap.CompressFormat.PNG, 100, it)
+                    .getResizedBitmap(
+                        width,
+                        width,
+                        false
+                    ).compress(Bitmap.CompressFormat.PNG, 100, it)
                 it.toByteArray()
             }
             val contentType = MediaType.parse(contentResolver.getType(imageUri))
             val requestFile: RequestBody = RequestBody.create(contentType, bytes)
 
-            val body: MultipartBody.Part = MultipartBody.Part.createFormData("image", fileName, requestFile)
+            val body: MultipartBody.Part =
+                MultipartBody.Part.createFormData("image", fileName, requestFile)
             apiService.uploadImage(body, phone)
-                    .awaitResult()
-                    .onSuccess {
-                        toast("Upload image successfully")
-                        bindHeaderView(it.also { user = it })
-                    }
-                    .onException {
-                        toast("Cannot upload image because ${it.message ?: "unknown error"}")
-                    }
-                    .onError {
-                        toast("Cannot upload image because ${retrofit.parseResultErrorMessage(it.first)}")
-                    }
+                .awaitResult()
+                .onSuccess {
+                    toast("Upload image successfully")
+                    bindHeaderView(it.also { user = it })
+                }
+                .onException {
+                    toast("Cannot upload image because ${it.message ?: "unknown error"}")
+                }
+                .onError {
+                    toast("Cannot upload image because ${retrofit.parseResultErrorMessage(it.first)}")
+                }
         }
     }
 
     override fun onStart() {
         super.onStart()
-        val slideViewHolder = recyclerCategory.findViewHolderForAdapterPosition(0) as? CategoryAdapter.SlideViewHolder
+        val slideViewHolder =
+            recyclerCategory.findViewHolderForAdapterPosition(0) as? CategoryAdapter.SlideViewHolder
         (slideViewHolder
-                ?: return)
-                .sliderLayout
-                .startAutoCycle()
+            ?: return)
+            .sliderLayout
+            .startAutoCycle()
     }
 
     override fun onResume() {
@@ -234,12 +248,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun updateCartCount() {
         cartDataSource.getCountCart()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onNext = { badge?.setNumber(it) },
-                        onError = { info("getCountCart error: $it") }
-                ).addTo(compositeDisposable)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onNext = { badge?.setNumber(it) },
+                onError = { info("getCountCart error: $it") }
+            ).addTo(compositeDisposable)
     }
 
     override fun onPause() {
@@ -249,11 +263,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onStop() {
         super.onStop()
-        val slideViewHolder = recyclerCategory.findViewHolderForAdapterPosition(0) as? CategoryAdapter.SlideViewHolder
+        val slideViewHolder =
+            recyclerCategory.findViewHolderForAdapterPosition(0) as? CategoryAdapter.SlideViewHolder
         (slideViewHolder
-                ?: return)
-                .sliderLayout
-                .stopAutoCycle()
+            ?: return)
+            .sliderLayout
+            .stopAutoCycle()
     }
 
     override fun onDestroy() {
@@ -263,7 +278,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onBackPressed() {
         when {
-            drawer_layout.isDrawerOpen(GravityCompat.START) -> drawer_layout.closeDrawer(GravityCompat.START)
+            drawer_layout.isDrawerOpen(GravityCompat.START) -> drawer_layout.closeDrawer(
+                GravityCompat.START
+            )
             doubleBackToExist -> super.onBackPressed()
             else -> {
                 doubleBackToExist = true

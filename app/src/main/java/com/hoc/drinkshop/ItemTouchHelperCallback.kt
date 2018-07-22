@@ -4,17 +4,30 @@ import android.graphics.Canvas
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 
+class ItemTouchHelperCallback(private val onSwiped: (RecyclerView.ViewHolder) -> Unit) :
+    ItemTouchHelper.Callback() {
+    override fun onMove(
+        recyclerView: RecyclerView,
+        viewHolder: RecyclerView.ViewHolder,
+        target: RecyclerView.ViewHolder
+    ) = false
 
-class ItemTouchHelperCallback(private val onSwiped: (RecyclerView.ViewHolder) -> Unit) : ItemTouchHelper.Callback() {
-    override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) = false
-
-    override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+    override fun getMovementFlags(
+        recyclerView: RecyclerView,
+        viewHolder: RecyclerView.ViewHolder
+    ): Int {
         return when (viewHolder) {
             is FavoritesAdapter.ViewHolder -> {
-                makeFlag(ItemTouchHelper.ACTION_STATE_SWIPE, ItemTouchHelper.START or ItemTouchHelper.END)
+                makeFlag(
+                    ItemTouchHelper.ACTION_STATE_SWIPE,
+                    ItemTouchHelper.START or ItemTouchHelper.END
+                )
             }
             is CartAdapter.ViewHolder -> {
-                makeFlag(ItemTouchHelper.ACTION_STATE_SWIPE, ItemTouchHelper.START or ItemTouchHelper.END)
+                makeFlag(
+                    ItemTouchHelper.ACTION_STATE_SWIPE,
+                    ItemTouchHelper.START or ItemTouchHelper.END
+                )
             }
             else -> 0
         }
@@ -26,19 +39,83 @@ class ItemTouchHelperCallback(private val onSwiped: (RecyclerView.ViewHolder) ->
         }
     }
 
-    override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
+    override fun onChildDraw(
+        c: Canvas,
+        recyclerView: RecyclerView,
+        viewHolder: RecyclerView.ViewHolder,
+        dX: Float,
+        dY: Float,
+        actionState: Int,
+        isCurrentlyActive: Boolean
+    ) {
         when (viewHolder) {
-            is FavoritesAdapter.ViewHolder -> getDefaultUIUtil().onDraw(c, recyclerView, viewHolder.swipableView, dX, dY, actionState, isCurrentlyActive)
-            is CartAdapter.ViewHolder -> getDefaultUIUtil().onDraw(c, recyclerView, viewHolder.swipableView, dX, dY, actionState, isCurrentlyActive)
-            else -> super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            is FavoritesAdapter.ViewHolder -> getDefaultUIUtil().onDraw(
+                c,
+                recyclerView,
+                viewHolder.swipableView,
+                dX,
+                dY,
+                actionState,
+                isCurrentlyActive
+            )
+            is CartAdapter.ViewHolder -> getDefaultUIUtil().onDraw(
+                c,
+                recyclerView,
+                viewHolder.swipableView,
+                dX,
+                dY,
+                actionState,
+                isCurrentlyActive
+            )
+            else -> super.onChildDraw(
+                c,
+                recyclerView,
+                viewHolder,
+                dX,
+                dY,
+                actionState,
+                isCurrentlyActive
+            )
         }
     }
 
-    override fun onChildDrawOver(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
+    override fun onChildDrawOver(
+        c: Canvas,
+        recyclerView: RecyclerView,
+        viewHolder: RecyclerView.ViewHolder?,
+        dX: Float,
+        dY: Float,
+        actionState: Int,
+        isCurrentlyActive: Boolean
+    ) {
         when (viewHolder) {
-            is FavoritesAdapter.ViewHolder -> getDefaultUIUtil().onDrawOver(c, recyclerView, viewHolder.swipableView, dX, dY, actionState, isCurrentlyActive)
-            is CartAdapter.ViewHolder -> getDefaultUIUtil().onDrawOver(c, recyclerView, viewHolder.swipableView, dX, dY, actionState, isCurrentlyActive)
-            else -> super.onChildDrawOver(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            is FavoritesAdapter.ViewHolder -> getDefaultUIUtil().onDrawOver(
+                c,
+                recyclerView,
+                viewHolder.swipableView,
+                dX,
+                dY,
+                actionState,
+                isCurrentlyActive
+            )
+            is CartAdapter.ViewHolder -> getDefaultUIUtil().onDrawOver(
+                c,
+                recyclerView,
+                viewHolder.swipableView,
+                dX,
+                dY,
+                actionState,
+                isCurrentlyActive
+            )
+            else -> super.onChildDrawOver(
+                c,
+                recyclerView,
+                viewHolder,
+                dX,
+                dY,
+                actionState,
+                isCurrentlyActive
+            )
         }
     }
 

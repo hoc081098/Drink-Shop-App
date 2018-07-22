@@ -1,6 +1,5 @@
 package com.hoc.drinkshop.transitions
 
-
 import android.animation.Animator
 import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
@@ -35,8 +34,11 @@ class Recolor : Transition {
         captureValues(transitionValues)
     }
 
-    override fun createAnimator(sceneRoot: ViewGroup, startValues: TransitionValues?,
-                                endValues: TransitionValues?): Animator? {
+    override fun createAnimator(
+        sceneRoot: ViewGroup,
+        startValues: TransitionValues?,
+        endValues: TransitionValues?
+    ): Animator? {
         if (startValues == null || endValues == null) {
             return null
         }
@@ -49,7 +51,12 @@ class Recolor : Transition {
             if (startBackground.color != endBackground.color) {
                 val finalColor = endBackground.color
                 endBackground.color = startBackground.color
-                bgAnimator = ObjectAnimator.ofInt(endBackground, COLORDRAWABLE_COLOR, startBackground.color, finalColor)
+                bgAnimator = ObjectAnimator.ofInt(
+                    endBackground,
+                    COLORDRAWABLE_COLOR,
+                    startBackground.color,
+                    finalColor
+                )
                 bgAnimator!!.setEvaluator(ArgbEvaluator())
             }
         }
@@ -75,13 +82,14 @@ class Recolor : Transition {
             override fun setValue(`object`: TextView, value: Int) = `object`.setTextColor(value)
             override fun get(`object`: TextView) = 0
         }.optimize()
-        val COLORDRAWABLE_COLOR: Property<ColorDrawable, Int> = object : IntProperty<ColorDrawable>() {
-            override fun setValue(`object`: ColorDrawable, value: Int) {
-                `object`.color = value
-            }
+        val COLORDRAWABLE_COLOR: Property<ColorDrawable, Int> =
+            object : IntProperty<ColorDrawable>() {
+                override fun setValue(`object`: ColorDrawable, value: Int) {
+                    `object`.color = value
+                }
 
-            override fun get(`object`: ColorDrawable) = `object`.color
-        }.optimize()
+                override fun get(`object`: ColorDrawable) = `object`.color
+            }.optimize()
     }
 }
 

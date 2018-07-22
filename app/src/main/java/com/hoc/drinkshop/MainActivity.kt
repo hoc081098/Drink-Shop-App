@@ -31,8 +31,13 @@ import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import okhttp3.ResponseBody
-import org.jetbrains.anko.*
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
 import org.jetbrains.anko.sdk25.coroutines.onClick
+import org.jetbrains.anko.startActivity
+import org.jetbrains.anko.startActivityForResult
+import org.jetbrains.anko.textColor
+import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.Retrofit
 import javax.net.ssl.HttpsURLConnection
@@ -62,43 +67,43 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus) {
             val fadeIn = Fade(Fade.IN)
-                    .addTarget(textViewDrinkShop)
-                    .setInterpolator(LinearOutSlowInInterpolator())
+                .addTarget(textViewDrinkShop)
+                .setInterpolator(LinearOutSlowInInterpolator())
             val scale = Scale(0.7f)
-                    .addTarget(textViewDrinkShop)
-                    .setInterpolator(LinearOutSlowInInterpolator())
+                .addTarget(textViewDrinkShop)
+                .setInterpolator(LinearOutSlowInInterpolator())
             val recolor = Recolor()
-                    .addTarget(textViewDrinkShop)
-                    .setInterpolator(LinearOutSlowInInterpolator())
+                .addTarget(textViewDrinkShop)
+                .setInterpolator(LinearOutSlowInInterpolator())
             val slideEnd = Slide(Gravity.END)
-                    .addTarget(buttonContinue)
-                    .setInterpolator(AccelerateDecelerateInterpolator())
+                .addTarget(buttonContinue)
+                .setInterpolator(AccelerateDecelerateInterpolator())
 
             TransitionSet()
-                    .addTransition(fadeIn)
-                    .addTransition(scale)
-                    .addTransition(recolor)
-                    .addTransition(slideEnd)
-                    .setDuration(3_000L)
-                    .let {
-                        TransitionManager.beginDelayedTransition(main_layout, it)
-                        textViewDrinkShop.visibility = View.VISIBLE
-                        textViewDrinkShop.textColor = Color.WHITE
-                        buttonContinue.visibility = View.VISIBLE
-                    }
+                .addTransition(fadeIn)
+                .addTransition(scale)
+                .addTransition(recolor)
+                .addTransition(slideEnd)
+                .setDuration(3_000L)
+                .let {
+                    TransitionManager.beginDelayedTransition(main_layout, it)
+                    textViewDrinkShop.visibility = View.VISIBLE
+                    textViewDrinkShop.textColor = Color.WHITE
+                    buttonContinue.visibility = View.VISIBLE
+                }
         }
     }
 
     private fun checkUserIsExistAndRegister() {
         launch(UI, parent = parentJob) {
             val spotsDialog = SpotsDialog(this@MainActivity, "Please wait...")
-                    .apply { show() }
+                .apply { show() }
             val account = getCurrentAccount()
-                    .onException {
-                        showExceptionMessage(it)
-                        spotsDialog.dismiss()
-                    }
-                    .getOrNull() ?: return@launch
+                .onException {
+                    showExceptionMessage(it)
+                    spotsDialog.dismiss()
+                }
+                .getOrNull() ?: return@launch
             val phoneNumber = account.phoneNumber.phoneNumber
 
             if (phoneNumber == null) {
@@ -107,24 +112,24 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
             }
 
             apiService
-                    .getUserByPhone(phoneNumber)
-                    .awaitResult()
-                    .also { spotsDialog.dismiss() }
-                    .onException {
-                        showExceptionMessage(it)
-                        return@launch
-                    }.onError { (errorBody, response) ->
-                        if (response.code() != HttpsURLConnection.HTTP_NOT_FOUND) { // if not found, then register
-                            showErrorMessage(errorBody)
-                            return@launch
-                        }
-                    }.onSuccess {
-                        info(it)
-                        info("User with phone $phoneNumber already exists. Navigate to home...")
-                        startActivity<HomeActivity>(USER to it)
-                        finish()
+                .getUserByPhone(phoneNumber)
+                .awaitResult()
+                .also { spotsDialog.dismiss() }
+                .onException {
+                    showExceptionMessage(it)
+                    return@launch
+                }.onError { (errorBody, response) ->
+                    if (response.code() != HttpsURLConnection.HTTP_NOT_FOUND) { // if not found, then register
+                        showErrorMessage(errorBody)
                         return@launch
                     }
+                }.onSuccess {
+                    info(it)
+                    info("User with phone $phoneNumber already exists. Navigate to home...")
+                    startActivity<HomeActivity>(USER to it)
+                    finish()
+                    return@launch
+                }
 
             @SuppressLint("InflateParams")
             val view = layoutInflater.inflate(R.layout.dialog_register, null)
@@ -133,20 +138,20 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
             val editTextName = view.editTextName
 
             editTextBirthday
-                    .addValidator(object : METValidator("Invalid birthday format") {
-                        override fun isValid(text: CharSequence, isEmpty: Boolean) =
-                                """\d{4}-\d{2}-\d{2}""".toRegex().matches(text)
-                    })
-                    .addTextChangedListener(PatternedTextWatcher("####-##-##"))
+                .addValidator(object : METValidator("Invalid birthday format") {
+                    override fun isValid(text: CharSequence, isEmpty: Boolean) =
+                        """\d{4}-\d{2}-\d{2}""".toRegex().matches(text)
+                })
+                .addTextChangedListener(PatternedTextWatcher("####-##-##"))
 
             spotsDialog.dismiss()
 
             val alert = AlertDialog.Builder(this@MainActivity)
-                    .setView(view)
-                    .setTitle("Register")
-                    .setMessage("Please fill in information")
-                    .create()
-                    .apply { show() }
+                .setView(view)
+                .setTitle("Register")
+                .setMessage("Please fill in information")
+                .create()
+                .apply { show() }
 
             view.buttonRegister.onClick {
                 val name = editTextName.text.toString()
@@ -178,14 +183,14 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
                     spotsDialog.show()
 
                     apiService.registerNewUser(phoneNumber, name, birthday, address)
-                            .awaitResult()
-                            .also { spotsDialog.dismiss() }
-                            .onException(::showExceptionMessage)
-                            .onError { showErrorMessage(it.first) }
-                            .onSuccess {
-                                startActivity<HomeActivity>(USER to it)
-                                finish()
-                            }
+                        .awaitResult()
+                        .also { spotsDialog.dismiss() }
+                        .onException(::showExceptionMessage)
+                        .onError { showErrorMessage(it.first) }
+                        .onSuccess {
+                            startActivity<HomeActivity>(USER to it)
+                            finish()
+                        }
                 }
             }
         }
@@ -201,12 +206,12 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
 
     private fun phoneLogin() {
         val configurationBuilder = AccountKitConfiguration.AccountKitConfigurationBuilder(
-                LoginType.PHONE,
-                AccountKitActivity.ResponseType.TOKEN
+            LoginType.PHONE,
+            AccountKitActivity.ResponseType.TOKEN
         )
         startActivityForResult<AccountKitActivity>(
-                APP_REQUEST_CODE,
-                ACCOUNT_KIT_ACTIVITY_CONFIGURATION to configurationBuilder.build()
+            APP_REQUEST_CODE,
+            ACCOUNT_KIT_ACTIVITY_CONFIGURATION to configurationBuilder.build()
         )
     }
 
@@ -214,17 +219,25 @@ class MainActivity : AppCompatActivity(), AnkoLogger {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             APP_REQUEST_CODE -> {
-                val loginResult = data?.getParcelableExtra<AccountKitLoginResult>(AccountKitLoginResult.RESULT_KEY)
+                val loginResult =
+                    data?.getParcelableExtra<AccountKitLoginResult>(AccountKitLoginResult.RESULT_KEY)
                         ?: return
                 when {
                     loginResult.error != null -> loginResult.error?.errorType?.message?.let(::toast)
                     loginResult.wasCancelled() -> toast("Login Cancelled")
                     else -> {
                         loginResult.accessToken
-                                ?.let {
-                                    info("Success: ${it.accountId}")
-                                }
-                                ?: info("Success: %s...".format(loginResult.authorizationCode?.substring(0, 10)))
+                            ?.let {
+                                info("Success: ${it.accountId}")
+                            }
+                            ?: info(
+                                "Success: %s...".format(
+                                    loginResult.authorizationCode?.substring(
+                                        0,
+                                        10
+                                    )
+                                )
+                            )
                         toast("Login successfully")
                         checkUserIsExistAndRegister()
                     }
