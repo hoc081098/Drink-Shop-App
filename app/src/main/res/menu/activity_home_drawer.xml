@@ -5,14 +5,25 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_sign_out"
-            android:icon="@drawable/ic_exit_to_app_black_24dp"
-            android:title="Sign out" />
-
-        <item
             android:id="@+id/nav_fav_drink"
             android:icon="@drawable/ic_favorite_black_24dp"
-            android:title="Favorites" />
+            android:title="@string/favorites" />
+
+        <item
+            android:id="@+id/nav_nearby_store"
+            android:icon="@drawable/ic_store_black_24dp"
+            android:title="@string/nearby_store" />
+
+        <item
+            android:id="@+id/nav_orders"
+            android:icon="@drawable/ic_attach_money_black_24dp"
+            android:title="@string/yours_orders" />
+
+        <item
+            android:id="@+id/nav_sign_out"
+            android:icon="@drawable/ic_exit_to_app_black_24dp"
+            android:title="@string/sign_out" />
+
     </group>
 
 

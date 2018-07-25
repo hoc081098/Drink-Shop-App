@@ -337,6 +337,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.nav_fav_drink -> {
                 startActivity<FavoritesActivity>(USER to user)
             }
+            R.id.nav_nearby_store -> {
+                startActivity<NearbyStoreActivity>()
+            }
+            R.id.nav_orders -> {
+                toast("TODO orders")
+            }
         }
 
         drawer_layout.closeDrawer(GravityCompat.START)

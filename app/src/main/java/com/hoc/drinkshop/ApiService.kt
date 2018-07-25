@@ -96,6 +96,13 @@ enum class SortOrder {
 
 data class PriceResponse(val price: Double)
 
+data class Store(
+    @field:Json(name = "_id") var id: Int,
+    val name: String,
+    val lat: Double,
+    val lng: Double
+)
+
 interface ApiService {
     /*  USER */
     @GET("users")
@@ -186,6 +193,13 @@ interface ApiService {
     @Headers("Content-Type: application/json")
     @POST("order")
     fun submitOrder(@Body order: Order): Observable<Order>
+
+    /* NEARBY STORE */
+    @GET("nearby-store")
+    fun getNearbyStore(
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double
+    ): Flowable<List<Store>>
 }
 
 sealed class Result<out T : Any> {

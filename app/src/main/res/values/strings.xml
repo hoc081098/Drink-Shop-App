@@ -25,4 +25,9 @@
     <string name="comment">Comment</string>
     <string name="cart">Cart</string>
     <string name="place_order">PLACE ORDER</string>
+    <string name="title_activity_nearby_store">Map</string>
+    <string name="favorites">Favorites</string>
+    <string name="nearby_store">Nearby store</string>
+    <string name="sign_out">Sign out</string>
+    <string name="yours_orders">Yours orders</string>
 </resources>
