@@ -2,13 +2,17 @@ package com.hoc.drinkshop
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.location.Location
 import android.location.LocationManager
 import android.location.LocationManager.GPS_PROVIDER
 import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
+import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -22,20 +26,28 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.rxkotlin.subscribeBy
+import io.reactivex.schedulers.Schedulers
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
 import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.HttpException
 import retrofit2.Retrofit
 
-class NearbyStoreActivity : AppCompatActivity(), OnMapReadyCallback {
+class NearbyStoreActivity : AppCompatActivity(), OnMapReadyCallback, AnkoLogger {
+    override val loggerTag = "MY_NEARBY_TAG"
+
     private val apiService by inject<ApiService>()
     private val retrofit by inject<Retrofit>()
     private val subject = BehaviorProcessor.create<Location>()
@@ -74,34 +86,47 @@ class NearbyStoreActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun updateNearbyStore() {
-        subject.switchMap {
-            apiService.getNearbyStore(
-                it.latitude,
-                it.longitude
-            )
-        }.subscribeBy(
-            onError = {
-                when (it) {
-                    is HttpException -> it.response()
-                        .errorBody()
-                        ?.let(retrofit::parseResultErrorMessage)
-                    else -> it.message
-                }.let { it ?: "An error occurred" }.let(::toast)
-            },
-            onNext = {
-                map?.run {
-                    storeMarkers.forEach { it.remove() }
-                    storeMarkers = it.map { (_, name, lat, lng) ->
-                        addMarker(
-                            MarkerOptions()
-                                .position(LatLng(lat, lng))
-                                .title(name)
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_store_primary_24dp))
-                        )
+        subject
+            .onBackpressureLatest()
+            .switchMap {
+                info("switchMap: (${it.latitude}, ${it.longitude})")
+                apiService.getNearbyStore(
+                    it.latitude,
+                    it.longitude,
+                    3_000
+                ).subscribeOn(Schedulers.io())
+            }.observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(
+                onError = {
+                    when (it) {
+                        is HttpException -> it.response()
+                            .errorBody()
+                            ?.let(retrofit::parseResultErrorMessage)
+                        else -> it.message
+                    }.let { it ?: "An error occurred" }.let(::toast)
+                },
+                onNext = {
+                    map?.run {
+                        info("onNext: ${it.size}")
+                        storeMarkers.forEach { it.remove() }
+                        storeMarkers = it.map { (_, name, loc, distanceInMetters) ->
+                            addMarker(
+                                MarkerOptions()
+                                    .position(LatLng(loc.lat, loc.lng))
+                                    .title(name)
+                                    .snippet("Distance: ${distanceInMetters}m")
+                                    .icon(
+                                        bitmapDescriptorFromVector(
+                                            this@NearbyStoreActivity,
+                                            R.drawable.ic_store_primary_24dp
+                                        )
+                                    )
+                            )
+                        }
                     }
                 }
-            }
-        ).addTo(compositeDisposable)
+            )
+            .addTo(compositeDisposable)
     }
 
     private fun requestLocationUpdate() {
@@ -154,7 +179,14 @@ class NearbyStoreActivity : AppCompatActivity(), OnMapReadyCallback {
                 MarkerOptions().position(latLng)
                     .title("My Location")
             )
-            moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+            moveCamera(
+                CameraUpdateFactory.newCameraPosition(
+                    CameraPosition.fromLatLngZoom(
+                        latLng,
+                        16f
+                    )
+                )
+            )
         }
     }
 
@@ -225,4 +257,22 @@ class NearbyStoreActivity : AppCompatActivity(), OnMapReadyCallback {
     companion object {
         const val LOCATION_PERMISSION_RC = 1
     }
+}
+
+fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorResId: Int): BitmapDescriptor {
+    val vectorDrawable = ContextCompat.getDrawable(context, vectorResId)!!.apply {
+        setBounds(
+            0,
+            0,
+            intrinsicWidth,
+            intrinsicHeight
+        )
+    }
+    val bitmap = Bitmap.createBitmap(
+        vectorDrawable.intrinsicWidth,
+        vectorDrawable.intrinsicHeight,
+        Bitmap.Config.ARGB_8888
+    )
+    vectorDrawable.draw(Canvas(bitmap))
+    return BitmapDescriptorFactory.fromBitmap(bitmap)!!
 }

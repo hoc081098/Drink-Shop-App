@@ -15,7 +15,8 @@ import java.util.Date
 val retrofitModule = module {
     single<Moshi> {
         Moshi.Builder()
-            .add(Date::class.java, Rfc3339DateJsonAdapter())
+            .add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
+            .add(Date::class.java, Rfc3339DateJsonAdapter().nonNull())
             .build()
     }
 

@@ -44,21 +44,21 @@ data class User(
 ) : Parcelable
 
 data class Banner(
-    @field:Json(name = "_id") var id: Int,
+    @Json(name = "_id") val id: Int,
     val name: String,
     val imageUrl: String
 )
 
 @Parcelize
 data class Category(
-    @field:Json(name = "_id") var id: Int,
+    @Json(name = "_id") val id: Int,
     val name: String,
     val imageUrl: String
 ) : Parcelable
 
 @Parcelize
 data class Drink(
-    @field:Json(name = "_id") var id: Int,
+    @Json(name = "_id") val id: Int,
     val name: String,
     val imageUrl: String,
     val price: Double,
@@ -96,11 +96,19 @@ enum class SortOrder {
 
 data class PriceResponse(val price: Double)
 
+data class Loc(
+    private val coordinates: List<Double>,
+    val type: String
+) {
+    val lng get() = coordinates[0]
+    val lat get() = coordinates[1]
+}
+
 data class Store(
-    @field:Json(name = "_id") var id: Int,
+    @Json(name = "_id") val id: Int,
     val name: String,
-    val lat: Double,
-    val lng: Double
+    val loc: Loc,
+    val distance: Double
 )
 
 interface ApiService {
@@ -198,7 +206,8 @@ interface ApiService {
     @GET("nearby-store")
     fun getNearbyStore(
         @Query("lat") lat: Double,
-        @Query("lng") lng: Double
+        @Query("lng") lng: Double,
+        @Query("max_distance") maxDistanceInMetters: Int
     ): Flowable<List<Store>>
 }
 
