@@ -1,5 +1,8 @@
 package com.hoc.drinkshop
 
+import com.squareup.moshi.FromJson
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonReader
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import okhttp3.Interceptor
@@ -12,10 +15,23 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.Date
 
+class OrderStatusAdapter {
+    @FromJson
+    fun fromJson(jsonReader: JsonReader, delegate: JsonAdapter<OrderStatus>): OrderStatus? {
+        val value = jsonReader.nextString()
+        return if (value.startsWith("PLACED")) {
+            OrderStatus.PLACED
+        } else {
+            delegate.fromJsonValue(value)
+        }
+    }
+}
+
 val retrofitModule = module {
     single<Moshi> {
         Moshi.Builder()
             .add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
+            .add(OrderStatusAdapter())
             .add(Date::class.java, Rfc3339DateJsonAdapter().nonNull())
             .build()
     }

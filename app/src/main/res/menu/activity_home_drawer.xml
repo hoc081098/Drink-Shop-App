@@ -17,7 +17,7 @@
         <item
             android:id="@+id/nav_orders"
             android:icon="@drawable/ic_attach_money_black_24dp"
-            android:title="@string/yours_orders" />
+            android:title="@string/your_orders" />
 
         <item
             android:id="@+id/nav_sign_out"

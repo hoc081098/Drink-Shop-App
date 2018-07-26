@@ -29,5 +29,10 @@
     <string name="favorites">Favorites</string>
     <string name="nearby_store">Nearby store</string>
     <string name="sign_out">Sign out</string>
-    <string name="yours_orders">Yours orders</string>
+    <string name="your_orders">Your orders</string>
+    <string name="new_">New</string>
+    <string name="processing">Processing</string>
+    <string name="shipping">Shipping</string>
+    <string name="shipped">Shipped</string>
+    <string name="canceled">Canceled</string>
 </resources>

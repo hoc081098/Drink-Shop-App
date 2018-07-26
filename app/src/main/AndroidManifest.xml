@@ -54,6 +54,7 @@
         <activity android:name=".FavoritesActivity" />
         <activity android:name=".CartsActivity" />
         <activity android:name=".SearchActivity" />
+        <activity android:name=".OrdersActivity" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -68,7 +69,7 @@
 
         <activity
             android:name=".NearbyStoreActivity"
-            android:label="@string/title_activity_nearby_store"></activity>
+            android:label="@string/title_activity_nearby_store" />
     </application>
 
 </manifest>

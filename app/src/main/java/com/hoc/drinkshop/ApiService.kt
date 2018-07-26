@@ -67,13 +67,28 @@ data class Drink(
     val stars: List<String>
 ) : Parcelable
 
+enum class OrderStatus {
+    @Json(name = "CANCELED")
+    CANCELED,
+    @Json(name = "PLACED")
+    PLACED,
+    @Json(name = "PROCESSING")
+    PROCESSING,
+    @Json(name = "SHIPPING")
+    SHIPPING,
+    @Json(name = "SHIPPED")
+    SHIPPED
+}
+
 data class Order(
+    @Json(name = "_id") val id: Int? = null,
     val price: Double,
     val detail: List<Cart>,
     val comment: String,
     val phone: String,
     val address: String,
-    val status: String? = null
+    val createdAt: Date? = null,
+    val status: OrderStatus? = null
 )
 
 enum class SortOrder {
@@ -201,6 +216,9 @@ interface ApiService {
     @Headers("Content-Type: application/json")
     @POST("order")
     fun submitOrder(@Body order: Order): Observable<Order>
+
+    @GET("order")
+    fun getOrderByStatus(@Query("status") status: OrderStatus): Observable<List<Order>>
 
     /* NEARBY STORE */
     @GET("nearby-store")
