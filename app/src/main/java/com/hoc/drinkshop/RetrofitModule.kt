@@ -32,7 +32,7 @@ val retrofitModule = module {
         Moshi.Builder()
             .add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
             .add(OrderStatusAdapter())
-            .add(Date::class.java, Rfc3339DateJsonAdapter().nonNull())
+            .add(Date::class.java, Rfc3339DateJsonAdapter().nullSafe())
             .build()
     }
 

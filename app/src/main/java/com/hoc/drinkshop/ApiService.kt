@@ -24,6 +24,7 @@ import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -80,16 +81,17 @@ enum class OrderStatus {
     SHIPPED
 }
 
+@Parcelize
 data class Order(
     @Json(name = "_id") val id: Int? = null,
-    val price: Double,
-    val detail: List<Cart>,
-    val comment: String,
-    val phone: String,
-    val address: String,
+    val price: Double = 0.0,
+    val detail: List<Cart> = emptyList(),
+    val comment: String = "",
+    val phone: String = "",
+    val address: String = "",
     val createdAt: Date? = null,
     val status: OrderStatus? = null
-)
+) : Parcelable
 
 enum class SortOrder {
     ASC_SORT_STRING,
@@ -218,7 +220,14 @@ interface ApiService {
     fun submitOrder(@Body order: Order): Observable<Order>
 
     @GET("order")
-    fun getOrderByStatus(@Query("status") status: OrderStatus): Observable<List<Order>>
+    fun getOrders(
+        @Query("status") status: OrderStatus,
+        @Query("phone") phone: String
+    ): Observable<List<Order>>
+
+    @FormUrlEncoded
+    @PUT("order")
+    fun cancelOrder(@Field("_id") orderId: Int): Call<Order>
 
     /* NEARBY STORE */
     @GET("nearby-store")

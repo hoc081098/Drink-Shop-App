@@ -1,6 +1,7 @@
 package com.hoc.drinkshop
 
 import android.app.Application
+import android.os.Parcelable
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Delete
@@ -14,8 +15,10 @@ import androidx.room.RoomDatabase
 import androidx.room.Update
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import kotlinx.android.parcel.Parcelize
 import org.koin.dsl.module.module
 
+@Parcelize
 @Entity(tableName = "carts")
 data class Cart(
     val name: String,
@@ -28,7 +31,7 @@ data class Cart(
     val ice: Int,
     val price: Double,
     @PrimaryKey(autoGenerate = true) var id: Int = 0
-)
+): Parcelable
 
 @Dao
 interface CartDao {

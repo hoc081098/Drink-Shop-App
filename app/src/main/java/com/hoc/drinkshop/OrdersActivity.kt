@@ -1,9 +1,9 @@
 package com.hoc.drinkshop
 
 import android.os.Bundle
-import android.os.Looper
-import android.view.LayoutInflater
 import android.view.View
+import android.view.View.INVISIBLE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.hoc.drinkshop.DrinkAdapter.Companion.decimalFormatPrice
+import com.hoc.drinkshop.MainActivity.Companion.USER
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -22,6 +24,7 @@ import kotlinx.android.synthetic.main.activity_orders.*
 import kotlinx.android.synthetic.main.order_item_layout.view.*
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
+import org.jetbrains.anko.startActivity
 import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.HttpException
@@ -29,18 +32,26 @@ import retrofit2.Retrofit
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+sealed class OrderState {
+    class Success(val orders: List<Order>) : OrderState()
+    class Error(val throwable: Throwable) : OrderState()
+    object Loading : OrderState()
+}
+
 class OrdersActivity : AppCompatActivity(), AnkoLogger {
     override val loggerTag = "MY_ORDERS_TAG"
 
     private val apiService by inject<ApiService>()
     private val retrofit by inject<Retrofit>()
     private val orderAdapter = OrderAdapter(::onClickListener)
-
+    private lateinit var user: User
     private val compositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_orders)
+
+        user = intent.getParcelableExtra(USER)
 
         recycler_orders.run {
             setHasFixedSize(true)
@@ -65,52 +76,64 @@ class OrdersActivity : AppCompatActivity(), AnkoLogger {
                 }
             }
             .switchMap {
-                apiService.getOrderByStatus(it)
+                apiService.getOrders(it, user.phone)
                     .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSubscribe {
-                        info("doOnSubscribe: ${Looper.myLooper() != Looper.getMainLooper()}")
-                        info("doOnSubscribe: ${Thread.currentThread()}")
-                        progressBar.visibility = View.VISIBLE
-                    }
-                    .doOnTerminate {
-                        info("doOnTerminate: ${Looper.myLooper() != Looper.getMainLooper()}")
-                        info("doOnTerminate: ${Thread.currentThread()}")
-                        progressBar.visibility = View.INVISIBLE
+                    .map<OrderState> { OrderState.Success(it) }
+                    .startWith(OrderState.Loading)
+                    .onErrorResumeNext { throwable: Throwable ->
+                        Observable.just(
+                            OrderState.Error(
+                                throwable
+                            )
+                        )
                     }
             }
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeBy(
-                onError = {
-                    when (it) {
-                        is HttpException -> it.response()
-                            .errorBody()
-                            ?.let(retrofit::parseResultErrorMessage)
-                        else -> it.message
-                    }.let { it ?: "An error occurred" }.let(::toast)
-                },
+                onError = { info(it) },
                 onNext = {
-                    orderAdapter.submitList(it)
+                    when (it) {
+                        OrderState.Loading -> progressBar.visibility = VISIBLE
+                        is OrderState.Success -> {
+                            progressBar.visibility = INVISIBLE
+                            orderAdapter.submitList(it.orders)
+                        }
+                        is OrderState.Error -> {
+                            progressBar.visibility = INVISIBLE
+                            it.throwable.let {
+                                when (it) {
+                                    is HttpException -> {
+                                        it.response()
+                                            .errorBody()
+                                            ?.let(retrofit::parseResultErrorMessage)
+                                    }
+                                    else -> it.message
+                                }
+                            }.let { it ?: "An error occurred" }.let(::toast)
+                        }
+                    }
                 }
             )
     }
 
     private fun onClickListener(order: Order) {
-        toast(order.id.toString())
+        startActivity<OrderDetailActivity>(ORDER to order)
     }
 
     override fun onStop() {
         super.onStop()
         compositeDisposable.clear()
     }
+
+    companion object {
+        const val ORDER = "ORDER"
+    }
 }
 
 class OrderAdapter(private val onClickListener: (Order) -> Unit) :
     ListAdapter<Order, OrderAdapter.ViewHolder>(diffCallback) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return LayoutInflater.from(parent.context)
-            .inflate(R.layout.order_item_layout, parent, false)
-            .let(::ViewHolder)
+        return ViewHolder(parent inflate  R.layout.order_item_layout)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {

@@ -20,12 +20,16 @@ import kotlinx.android.synthetic.main.submit_order_layout.view.*
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
 import org.jetbrains.anko.toast
 import org.koin.android.ext.android.inject
 import retrofit2.HttpException
 import retrofit2.Retrofit
 
-class CartsActivity : AppCompatActivity() {
+class CartsActivity : AppCompatActivity(), AnkoLogger {
+    override val loggerTag = "MY_CARTS_TAG"
+
     private val cartDataSource by inject<CartDataSource>()
     private val apiService by inject<ApiService>()
     private val retrofit by inject<Retrofit>()
@@ -77,6 +81,7 @@ class CartsActivity : AppCompatActivity() {
                 }
             )
             .addTo(compositeDisposable)
+
         cartDataSource.getSumPrice()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -116,31 +121,30 @@ class CartsActivity : AppCompatActivity() {
                 }
                 val comment = view.editTextComment.text.toString()
 
-                launch(UI, parent = parentJob) {
-                    Order(
-                        detail = carts,
-                        price = totalPrice,
-                        phone = user.phone,
-                        address = address,
-                        comment = comment
-                    ).let(apiService::submitOrder)
-                        .subscribeOn(Schedulers.io())
-                        .flatMapCompletable {
-                            cartDataSource.deleteAllCart().subscribeOn(Schedulers.io())
-                        }
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribeBy(
-                            onError = {
-                                when (it) {
-                                    is HttpException -> it.response()
-                                        .errorBody()
-                                        ?.let(retrofit::parseResultErrorMessage)
-                                    else -> it.message
-                                }.let { it ?: "An error occurred" }.let(::toast)
-                            },
-                            onComplete = { toast("Submit order successfully") }
-                        )
-                }
+                Order(
+                    detail = carts,
+                    price = totalPrice,
+                    phone = user.phone,
+                    address = address,
+                    comment = comment
+                ).let(apiService::submitOrder)
+                    .subscribeOn(Schedulers.io())
+                    .flatMapCompletable {
+                        cartDataSource.deleteAllCart().subscribeOn(Schedulers.io())
+                    }
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeBy(
+                        onError = {
+                            info(it.message, it)
+                            when (it) {
+                                is HttpException -> it.response()
+                                    .errorBody()
+                                    ?.let(retrofit::parseResultErrorMessage)
+                                else -> it.message
+                            }.let { it ?: "An error occurred" }.let(::toast)
+                        },
+                        onComplete = { toast("Submit order successfully") }
+                    )
             }
             .create()
             .show()

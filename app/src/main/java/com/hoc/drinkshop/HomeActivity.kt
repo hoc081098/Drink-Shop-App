@@ -341,7 +341,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 startActivity<NearbyStoreActivity>()
             }
             R.id.nav_orders -> {
-                startActivity<OrdersActivity>()
+                startActivity<OrdersActivity>(USER to user)
             }
         }
 

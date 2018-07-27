@@ -10,7 +10,7 @@
     <string name="birthday">yyyy-MM-dd</string>
     <string name="address">Address</string>
     <string name="register">Register</string>
-    <string name="title_activity_home">HomeActivity</string>
+    <string name="title_activity_home">Home</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">Android Studio</string>
