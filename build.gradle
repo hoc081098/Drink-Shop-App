@@ -4,7 +4,7 @@ buildscript {
     ext {
         gms_play_services_version = '11.8.0'
         kotlin_version = '1.2.51'
-        anko_version='0.10.5'
+        anko_version='0.10.8'
     }
 
     repositories {
