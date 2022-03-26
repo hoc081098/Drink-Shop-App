@@ -75,7 +75,7 @@ dependencies {
     implementation 'com.facebook.android:account-kit-sdk:4.33.0'
     implementation 'org.koin:koin-android:1.0.0-beta-3'
     implementation 'com.github.d-max:spots-dialog:0.7@aar'
-    implementation 'com.cepheuen.elegant-number-button:lib:1.0.2'
+    implementation 'com.cepheuen.elegant-number-button:lib:1.0.3'
 
     implementation 'androidx.room:room-runtime:2.0.0-beta01'
     kapt 'androidx.room:room-compiler:2.0.0-beta01'
